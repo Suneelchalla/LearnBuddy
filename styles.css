@@ -53,6 +53,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   height: 100%; overflow: hidden;
+  scroll-behavior: smooth;
   font-family: var(--font);
   background: var(--bg-page);
   color: var(--text-b);
@@ -68,10 +69,11 @@ html, body {
   align-items: center;
   padding: 0 20px;
   gap: 14px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
   flex-shrink: 0;
   position: relative;
   z-index: 100;
+  backdrop-filter: blur(8px);
 }
 .logo-mark {
   width: 40px; height: 40px;
