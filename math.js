@@ -1557,7 +1557,7 @@ async function fetchAndRenderWOTD(word) {
       meaning = 'A great word to learn! Look it up in the Dictionary tab for a full definition.';
     }
   }
-  if (!funFact) funFact = 'English adds about 1,000 new words every year — keep exploring! 📖';
+  if (!funFact) funFact = ''; // leave empty — panel hides it; Gemini will fill it when key is available
 
     const data = { word, phonetic, audioUrl, pos, meaning, example, funFact, emoji, date: new Date().toDateString() };
   wotdData = data;
@@ -1571,24 +1571,32 @@ async function fetchAndRenderWOTD(word) {
 function renderWOTD(data) {
   showWOTDLoading(false);
 
-  // Pill (always visible)
+  // ── Pill (always visible, meaning truncated via CSS) ──
   const wEl = document.getElementById('wotd-word');
-  const mEl = document.getElementById('wotd-meaning');
+  const mEl = document.getElementById('wotd-meaning'); // truncated in pill
   const pEl = document.getElementById('wotd-pos');
   if (wEl) { wEl.textContent = data.word; wEl.style.opacity='0'; wEl.style.transition='opacity .35s'; requestAnimationFrame(()=>wEl.style.opacity='1'); }
   if (mEl) mEl.textContent = data.meaning;
   if (pEl) pEl.textContent = data.pos;
 
-  // Panel details
+  // ── Expanded panel ──
   const phonEl  = document.getElementById('wotd-phonetic');
+  const fullEl  = document.getElementById('wotd-fullmean'); // full meaning, no truncation
   const exEl    = document.getElementById('wotd-example');
   const factEl  = document.getElementById('wotd-fact');
   const factW   = document.getElementById('wotd-fact-wrap');
   const emojiEl = document.getElementById('wotd-emoji');
-  if (phonEl)  phonEl.textContent  = data.phonetic || '';
-  if (exEl)    exEl.textContent    = data.example ? '"' + data.example + '"' : '';
+
+  if (phonEl)  phonEl.textContent = data.phonetic || '';
+  if (fullEl)  fullEl.textContent = data.meaning  || '';
+  if (exEl)    exEl.textContent   = data.example  ? '"' + data.example + '"' : '';
+
+  // Only show fun fact when it's genuinely interesting (not the generic fallback)
+  const genericFacts = ['English adds about 1,000', 'keep exploring', '170,000 words'];
+  const isGeneric = !data.funFact || genericFacts.some(g => data.funFact.includes(g));
   if (factEl)  factEl.textContent  = data.funFact || '';
-  if (factW)   factW.style.display = data.funFact ? '' : 'none';
+  if (factW)   factW.style.display = isGeneric ? 'none' : '';
+
   if (emojiEl) emojiEl.textContent = data.emoji || '📚';
 
   // Hide quiz on new word
