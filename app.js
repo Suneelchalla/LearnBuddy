@@ -2058,7 +2058,7 @@ function openMaxView() {
   if (window.ResizeObserver) {
     if (maxResizeObs) maxResizeObs.disconnect();
     maxResizeObs = new ResizeObserver(() => {
-      if (pages[curPage]) drawMaxCanvas();
+      if (pages[curPage]) { drawMaxCanvas(); fitMaxCanvas(); }
     });
     maxResizeObs.observe(wrap);
   }
@@ -2093,61 +2093,69 @@ function loadMaxPage(i) {
   document.getElementById('max-sel-row').style.display = 'none';
   renderMaxThumbs();
 
-  const canvas = document.getElementById('max-canvas');
-  const wrap   = document.getElementById('max-canvas-wrap');
+  const canvas    = document.getElementById('max-canvas');
+  const scaleWrap = document.getElementById('max-canvas-scale-wrap');
+  const scrollWrap= document.getElementById('max-canvas-wrap');
   const img = new Image();
+
   img.onload = () => {
-    // Set internal drawing buffer = natural image size (for hit-test accuracy)
+    // Set internal buffer to natural size (pixel-accurate hit testing)
     canvas.width  = img.naturalWidth;
     canvas.height = img.naturalHeight;
-
-    // Fit canvas visually inside the container — compute scale
-    // Use requestAnimationFrame so the wrap has a measured layout size
-    requestAnimationFrame(() => {
-      const availW = wrap.clientWidth  - 16; // minus padding
-      const availH = wrap.clientHeight - 16;
-      if (availW > 0 && availH > 0) {
-        const scale = Math.min(availW / img.naturalWidth, availH / img.naturalHeight, 1);
-        canvas.style.width  = Math.round(img.naturalWidth  * scale) + 'px';
-        canvas.style.height = Math.round(img.naturalHeight * scale) + 'px';
-      } else {
-        // Fallback: just constrain by CSS
-        canvas.style.width  = '100%';
-        canvas.style.height = 'auto';
-      }
-    });
-
     canvas.style.display = 'block';
+
+    // Draw image
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
+
+    // Fit to container using transform:scale (same approach as main viewer)
+    requestAnimationFrame(() => fitMaxCanvas());
+
     initMaxCanvasEvents(canvas, img);
   };
   img.src = pages[i].dataUrl;
 }
 
+function fitMaxCanvas() {
+  const canvas    = document.getElementById('max-canvas');
+  const scaleWrap = document.getElementById('max-canvas-scale-wrap');
+  const scrollWrap= document.getElementById('max-canvas-wrap');
+  if (!canvas || !scaleWrap || !scrollWrap) return;
+  if (!canvas.width || !canvas.height) return;
+
+  const availW = scrollWrap.clientWidth  - 20;
+  const availH = scrollWrap.clientHeight - 20;
+  if (availW <= 0 || availH <= 0) return;
+
+  // Scale to fill the available space (can scale UP unlike the old approach)
+  const fitScale = Math.min(availW / canvas.width, availH / canvas.height);
+  scaleWrap.style.width     = canvas.width  + 'px';
+  scaleWrap.style.height    = canvas.height + 'px';
+  scaleWrap.style.transform = 'scale(' + fitScale + ')';
+
+  // Store fit scale for zoom operations
+  canvas._maxFitScale = fitScale;
+
+  // Keep scroll container centered (no overflow at fit scale)
+  scrollWrap.classList.remove('zoomed');
+  scrollWrap.scrollLeft = 0;
+  scrollWrap.scrollTop  = 0;
+}
+
 function drawMaxCanvas(hoverIdx, selRect) {
   const canvas = document.getElementById('max-canvas');
-  const wrap   = document.getElementById('max-canvas-wrap');
   if (!canvas || !pages[curPage]) return;
   const img = new Image();
   img.onload = () => {
-    // Recalculate fit in case container changed size (e.g. zoom)
-    const availW = wrap.clientWidth  - 16;
-    const availH = wrap.clientHeight - 16;
-    if (availW > 0 && availH > 0) {
-      const scale = Math.min(availW / img.naturalWidth, availH / img.naturalHeight, 1);
-      canvas.style.width  = Math.round(img.naturalWidth  * scale) + 'px';
-      canvas.style.height = Math.round(img.naturalHeight * scale) + 'px';
-    }
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
-    maxWordBoxes.forEach((wb, i) => {
+    maxWordBoxes.forEach((wb, idx) => {
       if (wb.selected) {
         ctx.fillStyle = 'rgba(79,110,247,0.28)'; ctx.strokeStyle = '#4f6ef7'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.roundRect(wb.x-2, wb.y-1, wb.w+4, wb.h+2, 3); ctx.fill(); ctx.stroke();
-      } else if (i === hoverIdx) {
+      } else if (idx === hoverIdx) {
         ctx.fillStyle = 'rgba(245,158,11,0.2)'; ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.roundRect(wb.x-2, wb.y-1, wb.w+4, wb.h+2, 3); ctx.fill(); ctx.stroke();
       }
@@ -2157,6 +2165,8 @@ function drawMaxCanvas(hoverIdx, selRect) {
       ctx.setLineDash([5,3]); ctx.strokeRect(selRect.x, selRect.y, selRect.w, selRect.h);
       ctx.fillRect(selRect.x, selRect.y, selRect.w, selRect.h); ctx.setLineDash([]);
     }
+    // Re-fit after drawing (in case container changed)
+    fitMaxCanvas();
   };
   img.src = pages[curPage].dataUrl;
 }
@@ -2168,8 +2178,12 @@ function initMaxCanvasEvents(canvas) {
   let hoverIdx = -1;
 
   function toImgCoords(e) {
+    // getBoundingClientRect already accounts for CSS transform:scale
     const r = canvas.getBoundingClientRect();
-    return { x: (e.clientX - r.left) * canvas.width / r.width, y: (e.clientY - r.top) * canvas.height / r.height };
+    return {
+      x: (e.clientX - r.left) * (canvas.width  / r.width),
+      y: (e.clientY - r.top)  * (canvas.height / r.height)
+    };
   }
   function hitTestMax(x, y) {
     for (let i = 0; i < maxWordBoxes.length; i++) {
