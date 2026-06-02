@@ -115,12 +115,15 @@ function deletePage(i) {
   curPage = Math.min(curPage, pages.length - 1);
   renderThumbs();
   showPage(curPage);
+  saveSessionToLS();
   toast('🗑 Page ' + (i+1) + ' removed');
 }
 
 function showPage(i) {
   curPage = i;
   wordBoxes = []; extractedText = ''; currentSelectedWords = [];
+  // Save current page index so refresh restores to same page
+  try { localStorage.setItem('lb_curpage', String(i)); } catch {}
   canvasZoom = 1.0; // reset zoom on page change
   clearSelDisplay();
   document.getElementById('pg-lbl').textContent = 'Page ' + (i+1) + ' of ' + pages.length;
@@ -149,6 +152,7 @@ function showPage(i) {
 function clearAll(skipConfirm) {
   if (!skipConfirm && !confirm('Remove all pages and start over?')) return;
   pages = []; curPage = 0; extractedText = '';
+  clearSessionLS();
   speechSynthesis.cancel(); ttsActive = false; resetTTSBtn();
   document.getElementById('upload-area').style.display = '';
   ['thumb-bar','viewer','status-bar'].forEach(id => { document.getElementById(id).style.display = 'none'; });
@@ -299,6 +303,86 @@ async function savePDF() {
 // ═══════════════════════════════════════════════════════
 
 let wordBoxes = [];        // [{text, x, y, w, h}] in canvas coords
+
+// ── PERSISTENCE — save/restore lesson pages across refresh ──
+const LS_PAGES   = 'lb_pages_v2';   // JSON array of {dataUrl, name}
+const LS_CURPAGE = 'lb_curpage';
+const LS_WORDS   = 'lb_wordboxes';  // word boxes for current page
+const LS_TEXT    = 'lb_text';       // extracted text for current page
+
+function saveSessionToLS() {
+  try {
+    // Save pages (base64 images — already compressed to JPEG 88%)
+    localStorage.setItem(LS_PAGES,   JSON.stringify(pages));
+    localStorage.setItem(LS_CURPAGE, String(curPage));
+    // Save word state for current page
+    localStorage.setItem(LS_WORDS,   JSON.stringify(wordBoxes));
+    localStorage.setItem(LS_TEXT,    extractedText);
+  } catch (e) {
+    // localStorage can throw if quota exceeded (large images)
+    // Silently try saving just the current page only
+    try {
+      const single = pages[curPage] ? [pages[curPage]] : [];
+      localStorage.setItem(LS_PAGES,   JSON.stringify(single));
+      localStorage.setItem(LS_CURPAGE, '0');
+      console.warn('LocalStorage quota hit — saved only current page');
+    } catch (e2) {
+      console.warn('LocalStorage full — could not save session');
+    }
+  }
+}
+
+function clearSessionLS() {
+  [LS_PAGES, LS_CURPAGE, LS_WORDS, LS_TEXT].forEach(k => localStorage.removeItem(k));
+}
+
+function restoreSessionFromLS() {
+  try {
+    const raw = localStorage.getItem(LS_PAGES);
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (!Array.isArray(saved) || saved.length === 0) return;
+
+    // Restore pages array
+    pages = saved.filter(p => p && p.dataUrl);
+    if (!pages.length) return;
+
+    // Restore current page index
+    const savedPage = parseInt(localStorage.getItem(LS_CURPAGE) || '0');
+    curPage = Math.min(Math.max(0, savedPage), pages.length - 1);
+
+    // Restore word boxes and extracted text for current page
+    const savedBoxes = localStorage.getItem(LS_WORDS);
+    const savedText  = localStorage.getItem(LS_TEXT);
+    if (savedBoxes) { try { wordBoxes = JSON.parse(savedBoxes); } catch {} }
+    if (savedText)  { extractedText = savedText; }
+
+    // Rebuild UI
+    document.getElementById('upload-area').style.display   = 'none';
+    document.getElementById('thumb-bar').style.display     = 'flex';
+    document.getElementById('viewer').style.display        = 'flex';
+    document.getElementById('status-bar').style.display    = 'flex';
+    document.getElementById('btn-extract').style.display   = '';
+    document.getElementById('btn-pdf').style.display       = '';
+    document.getElementById('btn-clr').style.display       = '';
+    document.getElementById('btn-max').style.display       = '';
+
+    renderThumbs();
+    showPage(curPage);
+
+    // If word boxes were restored, show status
+    if (wordBoxes.length) {
+      setStatus('success', wordBoxes.length + ' words mapped — click or drag to select');
+    }
+
+    toast('📂 Lesson restored from last session');
+  } catch (e) {
+    console.warn('Could not restore session:', e);
+    clearSessionLS();
+  }
+}
+
+
 let canvasZoom  = 1.0;     // current zoom level (1 = fit-to-container)
 let canvasOffX  = 0;       // pan offset X (not used yet, reserved)
 let canvasOffY  = 0;       // pan offset Y
@@ -868,6 +952,7 @@ function selAct(type) {
 // ── TAB NAVIGATION ──
 function switchTab(tab) {
   curTab = tab;
+  try { localStorage.setItem('lb_tab', tab); } catch {}
   document.querySelectorAll('.tnav-tab').forEach(t => t.classList.remove('active'));
   const tabEl = document.getElementById('tab-' + tab);
   if (tabEl) tabEl.classList.add('active');
@@ -1622,7 +1707,7 @@ async function showDictCacheInfo() {
 }
 
 // ── TRANSLATE UI (Google-powered, no API) ──
-let translateTargetLang = 'ta'; // default: Tamil
+let translateTargetLang = localStorage.getItem('lb_translang') || 'ta'; // restored or default Tamil
 
 function showTranslateUI(text) {
   // Switch to translate tab
@@ -1672,10 +1757,10 @@ function updateTranslateLinks(text) {
 }
 
 function setTranslateLang(btn) {
-  // Update active button
   document.querySelectorAll('.tr-lang-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   translateTargetLang = btn.dataset.lang;
+  try { localStorage.setItem('lb_translang', translateTargetLang); } catch {}
 
   // Refresh links with new target language
   const text = document.getElementById('tr-original')?.textContent || '';
@@ -2370,13 +2455,19 @@ document.addEventListener('keydown', e => {
 });
 
 // ── INIT ──
+// Restore last active tab
+const _savedTab = localStorage.getItem('lb_tab') || 'search';
+
+// Restore lesson pages from last session (before showing home)
+restoreSessionFromLS();
+
 // Set footer year
 const _footerYear = document.getElementById('footer-year');
 if (_footerYear) _footerYear.textContent = new Date().getFullYear();
 
 // Show home dashboard on startup
 if (typeof loadHomeStats === 'function') loadHomeStats();
-switchTab('search');
+switchTab(_savedTab);
 renderNotebook();
 updateSearchLinks('');
 
