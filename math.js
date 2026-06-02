@@ -1434,16 +1434,20 @@ function getWOTDWord() {
 }
 
 // ── Main init — called from loadHomeStats ──
+// ── Toggle open/close the expanded panel ──
+let wotdOpen = false;
+function toggleWOTD() {
+  const panel   = document.getElementById('wotd-panel');
+  const pill    = document.getElementById('wotd-pill');
+  if (!panel) return;
+  wotdOpen = !wotdOpen;
+  panel.style.display = wotdOpen ? '' : 'none';
+  if (pill) pill.classList.toggle('open', wotdOpen);
+}
+
 async function initWOTD() {
   const section = document.getElementById('wotd-section');
   if (!section) return;
-
-  // Show date
-  const dateEl = document.getElementById('wotd-date');
-  if (dateEl) {
-    const d = new Date();
-    dateEl.textContent = d.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
-  }
 
   // Check cache — same word all day
   const today = new Date().toDateString();
@@ -1543,40 +1547,43 @@ Return ONLY valid JSON (no markdown):
 
 function renderWOTD(data) {
   showWOTDLoading(false);
-  const content = document.getElementById('wotd-content');
-  if (!content) return;
-  content.style.display = '';
 
-  document.getElementById('wotd-word').textContent     = data.word;
-  document.getElementById('wotd-pos').textContent      = data.pos;
-  document.getElementById('wotd-phonetic').textContent = data.phonetic || '';
-  document.getElementById('wotd-meaning').textContent  = data.meaning;
-  document.getElementById('wotd-example').textContent  = data.example ? '"' + data.example + '"' : '';
-  document.getElementById('wotd-fact').textContent     = data.funFact || '';
-  document.getElementById('wotd-emoji').textContent    = data.emoji || '📚';
+  // Pill (always visible)
+  const wEl = document.getElementById('wotd-word');
+  const mEl = document.getElementById('wotd-meaning');
+  const pEl = document.getElementById('wotd-pos');
+  if (wEl) { wEl.textContent = data.word; wEl.style.opacity='0'; wEl.style.transition='opacity .35s'; requestAnimationFrame(()=>wEl.style.opacity='1'); }
+  if (mEl) mEl.textContent = data.meaning;
+  if (pEl) pEl.textContent = data.pos;
 
-  const factWrap = document.getElementById('wotd-fact-wrap');
-  if (factWrap) factWrap.style.display = data.funFact ? '' : 'none';
+  // Panel details
+  const phonEl  = document.getElementById('wotd-phonetic');
+  const exEl    = document.getElementById('wotd-example');
+  const factEl  = document.getElementById('wotd-fact');
+  const factW   = document.getElementById('wotd-fact-wrap');
+  const emojiEl = document.getElementById('wotd-emoji');
+  if (phonEl)  phonEl.textContent  = data.phonetic || '';
+  if (exEl)    exEl.textContent    = data.example ? '"' + data.example + '"' : '';
+  if (factEl)  factEl.textContent  = data.funFact || '';
+  if (factW)   factW.style.display = data.funFact ? '' : 'none';
+  if (emojiEl) emojiEl.textContent = data.emoji || '📚';
 
-  const speakBtn = document.getElementById('wotd-speak');
-  if (speakBtn) speakBtn.style.display = 'inline';
-
-  // Hide quiz when new word loads
+  // Hide quiz on new word
   const qw = document.getElementById('wotd-quiz-wrap');
   if (qw) qw.style.display = 'none';
   wotdQuizData = null;
-
-  // Animate the word in
-  const wordEl = document.getElementById('wotd-word');
-  if (wordEl) { wordEl.style.opacity = '0'; wordEl.style.transform = 'translateY(8px)';
-    requestAnimationFrame(() => { wordEl.style.transition = 'all .4s ease'; wordEl.style.opacity = '1'; wordEl.style.transform = 'translateY(0)'; }); }
 }
 
 function showWOTDLoading(show) {
   const loading = document.getElementById('wotd-loading');
-  const content = document.getElementById('wotd-content');
   if (loading) loading.style.display = show ? '' : 'none';
-  if (content) content.style.display = show ? 'none' : '';
+  // When loading, show placeholder text in pill
+  const wEl = document.getElementById('wotd-word');
+  const mEl = document.getElementById('wotd-meaning');
+  if (show) {
+    if (wEl) wEl.textContent = '…';
+    if (mEl) mEl.textContent = 'loading…';
+  }
 }
 
 // ── Speak the word ──
@@ -1727,7 +1734,7 @@ function refreshWOTD() {
   do { newWord = WOTD_WORDS[Math.floor(Math.random() * WOTD_WORDS.length)]; }
   while (newWord === current);
   wotdData = null;
-  const content = document.getElementById('wotd-content');
-  if (content) content.style.display = 'none';
+  // Clear cache so new word is fetched fresh
+  try { localStorage.removeItem('lb_wotd'); } catch {}
   fetchAndRenderWOTD(newWord);
 }
