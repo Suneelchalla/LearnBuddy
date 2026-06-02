@@ -42,30 +42,41 @@ function filterStories(genre) {
 }
 
 // ── STORY GRID ────────────────────────────────
+// Genre styles for card headers
+const GENRE_CARD_STYLE = {
+  'Indian Mythology':       { bg: 'linear-gradient(135deg,#f59e0b,#ef4444)',   text: '#fff7ed' },
+  'Indian History':         { bg: 'linear-gradient(135deg,#10b981,#0d9488)',   text: '#ecfdf5' },
+  'World Mythology':        { bg: 'linear-gradient(135deg,#8b5cf6,#6366f1)',   text: '#f5f3ff' },
+  'Fables & Moral Stories': { bg: 'linear-gradient(135deg,#06b6d4,#3b82f6)',   text: '#ecfeff' },
+  'Folk Tales':             { bg: 'linear-gradient(135deg,#f97316,#f43f5e)',   text: '#fff7ed' },
+  'Adventure':              { bg: 'linear-gradient(135deg,#1e40af,#7c3aed)',   text: '#eff6ff' },
+  'Real Life Heroes':       { bg: 'linear-gradient(135deg,#059669,#0284c7)',   text: '#ecfdf5' },
+};
+
 function renderStoryGrid(genre) {
   const grid = document.getElementById('story-grid');
   if (!grid) return;
   const filtered = genre === 'all' ? STORIES : STORIES.filter(s => s.genre === genre);
 
-  grid.innerHTML = filtered.map(story => `
+  grid.innerHTML = filtered.map(story => {
+    const style = GENRE_CARD_STYLE[story.genre] || { bg: 'linear-gradient(135deg,#4f6ef7,#8b5cf6)', text: '#eef2ff' };
+    return `
     <div class="story-card" onclick="openStory('${story.id}')">
-      <div class="story-card-img-wrap">
-        <img src="${story.image}" alt="${story.title}"
-          onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
-          loading="lazy">
-        <div class="story-card-img-fallback" style="display:none">${story.emoji}</div>
+      <!-- Emoji banner header — no external images, always works -->
+      <div class="story-card-banner" style="background:${style.bg};">
+        <div class="story-card-emoji">${story.emoji}</div>
+        <div class="story-card-genre-pill" style="color:${style.text}">${story.genre}</div>
       </div>
       <div class="story-card-body">
-        <div class="story-genre-tag">${story.genre}</div>
-        <div class="story-card-title">${story.emoji} ${story.title}</div>
+        <div class="story-card-title">${story.title}</div>
         <div class="story-card-summary">${story.summary}</div>
         <div class="story-card-footer">
           <span class="story-word-count">~${story.words} words</span>
           <span class="story-read-btn">Read →</span>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 // ── OPEN / CLOSE STORY READER ─────────────────
