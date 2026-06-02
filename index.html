@@ -197,11 +197,15 @@
 
   <div class="thumb-bar" id="thumb-bar"></div>
 
+  <!-- Viewer: outer = scroll container, inner = scale wrapper, canvas = drawing surface -->
   <div class="viewer" id="viewer">
-    <div class="viewer-inner" style="position:relative;width:100%">
-      <img id="cur-img" alt="Lesson page" style="display:none">
-      <canvas id="lesson-canvas"></canvas>
-      <div id="sel-box" style="position:absolute;border:2.5px solid var(--blue);background:rgba(79,110,247,.12);border-radius:4px;pointer-events:none;display:none;"></div>
+    <!-- canvas-scroll-wrap: scrollable viewport, overflow:auto gives scrollbars when zoomed -->
+    <div id="canvas-scroll-wrap" style="width:100%;height:100%;overflow:auto;display:flex;align-items:flex-start;justify-content:flex-start;">
+      <!-- canvas-scale-wrap: this div is scaled via transform:scale(). Its size drives scroll area -->
+      <div id="canvas-scale-wrap" style="transform-origin:top left;flex-shrink:0;position:relative;display:inline-block;">
+        <img id="cur-img" alt="Lesson page" style="display:none">
+        <canvas id="lesson-canvas" style="display:block;"></canvas>
+      </div>
     </div>
   </div>
 
