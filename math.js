@@ -29,6 +29,7 @@ function openSubject(name) {
   };
   document.getElementById('page-tagline').textContent = titles[name] || 'LearnBuddy';
   if (name === 'math')     { mathTab('calc'); }
+  if (name === 'stories')  { if(typeof initStories==='function') initStories(); }
   if (name === 'science')  { sciTab('periodic'); buildPeriodicTable(); }
   if (name === 'language') { langTab('trans'); }
   if (name === 'notebook') { renderNotebookStandalone(); }
