@@ -361,10 +361,20 @@
   <div class="subject-workspace">
     <div class="sw-sidebar">
       <div class="sw-nav-title">➗ Mathematics</div>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text-l);padding:8px 12px 4px;">TOOLS</div>
       <button class="sw-nav-btn active" id="math-nav-calc"     onclick="mathTab('calc')">🧮 Calculator</button>
+      <button class="sw-nav-btn"        id="math-nav-abacus"   onclick="mathTab('abacus')">🔢 Abacus</button>
       <button class="sw-nav-btn"        id="math-nav-tables"   onclick="mathTab('tables')">✖️ Times Tables</button>
       <button class="sw-nav-btn"        id="math-nav-geometry" onclick="mathTab('geometry')">📐 Geometry</button>
       <button class="sw-nav-btn"        id="math-nav-convert"  onclick="mathTab('convert')">🔄 Unit Converter</button>
+      <button class="sw-nav-btn"        id="math-nav-fractions" onclick="mathTab('fractions')">🍕 Fractions</button>
+      <button class="sw-nav-btn"        id="math-nav-patterns" onclick="mathTab('patterns')">🔷 Number Patterns</button>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text-l);padding:8px 12px 4px;margin-top:4px;">CLASS 5 TOPICS</div>
+      <button class="sw-nav-btn"        id="math-nav-hcflcm"   onclick="mathTab('hcflcm')">🔗 HCF &amp; LCM</button>
+      <button class="sw-nav-btn"        id="math-nav-decimals" onclick="mathTab('decimals')">📍 Decimals</button>
+      <button class="sw-nav-btn"        id="math-nav-percent"  onclick="mathTab('percent')">💯 Percentages</button>
+      <button class="sw-nav-btn"        id="math-nav-area"     onclick="mathTab('area')">📦 Area &amp; Volume</button>
+      <button class="sw-nav-btn"        id="math-nav-roman"    onclick="mathTab('roman')">🏛️ Roman Numerals</button>
       <button class="sw-nav-btn"        id="math-nav-solve"    onclick="mathTab('solve')">🤖 AI Solver</button>
     </div>
     <div class="sw-content" id="math-content">
@@ -508,6 +518,131 @@
         </div>
       </div>
 
+      <!-- Abacus -->
+      <div id="math-abacus" class="math-panel" style="display:none">
+        <h2 class="math-title">🔢 Abacus — Learn to Count</h2>
+        <p style="font-size:14px;color:var(--text-m);margin-bottom:16px;">Click the beads to move them. Each column is a place value.</p>
+        <div id="abacus-container"></div>
+        <div style="margin-top:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div style="font-size:28px;font-weight:900;color:var(--blue-d)">Value: <span id="abacus-value">0</span></div>
+          <button class="action-btn" onclick="resetAbacus()">Reset</button>
+          <button class="action-btn primary" onclick="randomAbacus()">🎲 Random Number</button>
+        </div>
+        <div style="margin-top:16px;padding:14px;background:var(--blue-l);border-radius:var(--r-md);">
+          <div style="font-size:13px;font-weight:800;color:var(--blue-d);margin-bottom:8px;">🎯 Abacus Challenge</div>
+          <div id="abacus-challenge-q" style="font-size:18px;font-weight:900;color:var(--text-h);margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;">
+            <button class="action-btn primary" onclick="checkAbacus()">Check ✓</button>
+            <button class="action-btn" onclick="newAbacusChallenge()">New →</button>
+          </div>
+          <div id="abacus-challenge-fb" style="margin-top:8px;font-size:14px;font-weight:700;min-height:24px;"></div>
+        </div>
+      </div>
+      <!-- Fractions -->
+      <div id="math-fractions" class="math-panel" style="display:none">
+        <h2 class="math-title">🍕 Fractions Visualiser</h2>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;align-items:flex-end;">
+          <div><label style="font-size:13px;font-weight:700;color:var(--text-m);display:block;margin-bottom:4px;">Numerator</label><input id="frac-num" type="number" min="0" max="99" value="1" class="geo-inp" style="width:80px" oninput="drawFraction()"></div>
+          <div><label style="font-size:13px;font-weight:700;color:var(--text-m);display:block;margin-bottom:4px;">Denominator</label><input id="frac-den" type="number" min="1" max="12" value="4" class="geo-inp" style="width:80px" oninput="drawFraction()"></div>
+          <div id="frac-simplified" style="font-size:14px;font-weight:700;color:var(--purple);"></div>
+        </div>
+        <canvas id="frac-canvas" width="500" height="200" style="max-width:100%;border-radius:var(--r-md);"></canvas>
+        <div id="frac-info" style="margin-top:12px;font-size:14px;color:var(--text-m);font-weight:600;line-height:1.7;"></div>
+        <div style="margin-top:16px;">
+          <div style="font-size:13px;font-weight:800;color:var(--text-h);margin-bottom:10px;">➕ Fraction Calculator</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <input id="fc-n1" type="number" value="1" class="geo-inp" style="width:60px"><span style="font-size:18px;font-weight:900;">/</span><input id="fc-d1" type="number" value="2" class="geo-inp" style="width:60px">
+            <select id="fc-op" class="conv-sel"><option>+</option><option>-</option><option>×</option><option>÷</option></select>
+            <input id="fc-n2" type="number" value="1" class="geo-inp" style="width:60px"><span style="font-size:18px;font-weight:900;">/</span><input id="fc-d2" type="number" value="3" class="geo-inp" style="width:60px">
+            <button class="action-btn primary" onclick="calcFractions()">=</button>
+          </div>
+          <div id="fc-result" style="margin-top:10px;font-size:20px;font-weight:900;color:var(--blue-d);min-height:32px;"></div>
+        </div>
+      </div>
+      <!-- Number Patterns -->
+      <div id="math-patterns" class="math-panel" style="display:none">
+        <h2 class="math-title">🔷 Number Patterns</h2>
+        <div class="geo-grid">
+          <div class="geo-card"><div class="geo-icon">🌀</div><div class="geo-name">Fibonacci</div><div id="pat-fib" style="font-size:13px;font-weight:700;color:var(--blue-d);line-height:2;"></div></div>
+          <div class="geo-card"><div class="geo-icon">⬜</div><div class="geo-name">Square Numbers</div><div id="pat-sq" style="font-size:13px;font-weight:700;color:var(--purple);line-height:2;"></div></div>
+          <div class="geo-card"><div class="geo-icon">🔺</div><div class="geo-name">Triangular</div><div id="pat-tri" style="font-size:13px;font-weight:700;color:var(--amber);line-height:2;"></div></div>
+          <div class="geo-card"><div class="geo-icon">🔵</div><div class="geo-name">Prime Numbers</div><div id="pat-prime" style="font-size:13px;font-weight:700;color:var(--green);line-height:2;"></div></div>
+          <div class="geo-card"><div class="geo-icon">3⁴</div><div class="geo-name">Powers of 3</div><div id="pat-pow" style="font-size:13px;font-weight:700;color:var(--teal);line-height:2;"></div></div>
+          <div class="geo-card"><div class="geo-icon">➕</div><div class="geo-name">Even Numbers</div><div id="pat-even" style="font-size:13px;font-weight:700;color:var(--rose);line-height:2;"></div></div>
+        </div>
+        <div style="margin-top:20px;padding:16px;background:var(--blue-l);border-radius:var(--r-md);">
+          <div style="font-size:13px;font-weight:800;color:var(--blue-d);margin-bottom:10px;">❓ What comes next?</div>
+          <div id="pattern-quiz-q" style="font-size:20px;font-weight:900;color:var(--text-h);margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;"><input id="pattern-answer" type="number" class="geo-inp" style="width:100px;" placeholder="?"><button class="action-btn primary" onclick="checkPatternQuiz()">Check</button><button class="action-btn" onclick="newPatternQuiz()">Next →</button></div>
+          <div id="pattern-fb" style="margin-top:8px;font-size:14px;font-weight:700;min-height:24px;"></div>
+        </div>
+      </div>
+      <!-- HCF & LCM -->
+      <div id="math-hcflcm" class="math-panel" style="display:none">
+        <h2 class="math-title">🔗 HCF &amp; LCM</h2>
+        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px;">
+          <div><label style="font-size:13px;font-weight:700;color:var(--text-m);display:block;margin-bottom:4px;">Number 1</label><input id="hcf-a" type="number" value="12" class="geo-inp" style="width:100px"></div>
+          <div><label style="font-size:13px;font-weight:700;color:var(--text-m);display:block;margin-bottom:4px;">Number 2</label><input id="hcf-b" type="number" value="18" class="geo-inp" style="width:100px"></div>
+          <button class="action-btn primary" onclick="calcHCFLCM()">Calculate</button>
+        </div>
+        <div id="hcflcm-result"></div>
+      </div>
+      <!-- Decimals -->
+      <div id="math-decimals" class="math-panel" style="display:none">
+        <h2 class="math-title">📍 Decimals</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+          <div class="geo-card"><div class="geo-name">Place Value</div><input id="dec-num" type="text" value="47.386" class="geo-inp" placeholder="Enter decimal" oninput="showDecimalPlace()"><div id="dec-place-result" style="margin-top:10px;font-size:13px;line-height:1.8;"></div></div>
+          <div class="geo-card"><div class="geo-name">Convert Fraction ↔ Decimal</div><input id="dec-frac" type="text" value="3/4" class="geo-inp" placeholder="e.g. 3/4 or 0.75" style="margin-bottom:8px;"><button class="action-btn primary" onclick="convertDecFrac()">Convert</button><div id="dec-frac-result" style="margin-top:8px;font-size:16px;font-weight:800;color:var(--blue-d);"></div></div>
+          <div class="geo-card"><div class="geo-name">Decimal Operations</div>
+            <input id="dec-op-a" type="number" step="0.01" value="3.5" class="geo-inp" style="margin-bottom:6px;">
+            <select id="dec-op" class="conv-sel" style="margin-bottom:6px;"><option>+</option><option>-</option><option>×</option><option>÷</option></select>
+            <input id="dec-op-b" type="number" step="0.01" value="1.2" class="geo-inp" style="margin-bottom:8px;">
+            <button class="action-btn primary" onclick="calcDecOp()">Calculate</button>
+            <div id="dec-op-result" style="margin-top:8px;font-size:18px;font-weight:900;color:var(--blue-d);"></div>
+          </div>
+          <div class="geo-card"><div class="geo-name">Round to Decimal Places</div><input id="dec-round-n" type="number" step="any" value="3.14159" class="geo-inp" style="margin-bottom:6px;"><label style="font-size:13px;font-weight:700;color:var(--text-m);">Places: <input id="dec-round-p" type="number" min="0" max="6" value="2" class="geo-inp" style="width:60px;display:inline;margin-left:6px;"></label><button class="action-btn primary" onclick="roundDecimal()" style="margin-top:8px;">Round</button><div id="dec-round-result" style="margin-top:8px;font-size:18px;font-weight:900;color:var(--blue-d);"></div></div>
+        </div>
+      </div>
+      <!-- Percentages -->
+      <div id="math-percent" class="math-panel" style="display:none">
+        <h2 class="math-title">💯 Percentages</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="geo-card"><div class="geo-name">What is X% of Y?</div><input id="pct-x" type="number" value="25" class="geo-inp" placeholder="%" style="margin-bottom:6px;"><input id="pct-y" type="number" value="200" class="geo-inp" placeholder="of number"><button class="action-btn primary" onclick="calcPctOf()" style="margin-top:8px;">Calculate</button><div id="pct-of-result" class="geo-result" style="display:block;margin-top:8px;"></div></div>
+          <div class="geo-card"><div class="geo-name">X is what % of Y?</div><input id="pct-a" type="number" value="30" class="geo-inp" placeholder="X" style="margin-bottom:6px;"><input id="pct-b" type="number" value="120" class="geo-inp" placeholder="Y"><button class="action-btn primary" onclick="calcWhatPct()" style="margin-top:8px;">Calculate</button><div id="pct-what-result" class="geo-result" style="display:block;margin-top:8px;"></div></div>
+          <div class="geo-card"><div class="geo-name">Percentage Increase/Decrease</div><input id="pct-orig" type="number" value="100" class="geo-inp" placeholder="Original" style="margin-bottom:6px;"><input id="pct-new" type="number" value="125" class="geo-inp" placeholder="New value"><button class="action-btn primary" onclick="calcPctChange()" style="margin-top:8px;">Calculate</button><div id="pct-change-result" class="geo-result" style="display:block;margin-top:8px;"></div></div>
+          <div class="geo-card"><div class="geo-name">Visual Bar</div><canvas id="pct-bar-canvas" width="240" height="80" style="max-width:100%;border-radius:8px;"></canvas><div id="pct-bar-label" style="font-size:13px;font-weight:700;color:var(--text-m);margin-top:6px;"></div></div>
+        </div>
+      </div>
+      <!-- Area & Volume -->
+      <div id="math-area" class="math-panel" style="display:none">
+        <h2 class="math-title">📦 Area &amp; Volume</h2>
+        <div class="geo-grid">
+          <div class="geo-card"><div class="geo-icon">▭</div><div class="geo-name">Cuboid (Box)</div><label>Length <input id="cub-l" type="number" class="geo-inp" placeholder="cm"></label><label>Width <input id="cub-w" type="number" class="geo-inp" placeholder="cm"></label><label>Height <input id="cub-h" type="number" class="geo-inp" placeholder="cm"></label><button class="action-btn primary" onclick="calcVolume('cuboid')" style="margin-top:4px;">Calculate</button><div class="geo-result" id="cuboid-result"></div></div>
+          <div class="geo-card"><div class="geo-icon">🔵</div><div class="geo-name">Cylinder</div><label>Radius <input id="cyl-r" type="number" class="geo-inp" placeholder="cm"></label><label>Height <input id="cyl-h" type="number" class="geo-inp" placeholder="cm"></label><button class="action-btn primary" onclick="calcVolume('cylinder')" style="margin-top:4px;">Calculate</button><div class="geo-result" id="cylinder-result"></div></div>
+          <div class="geo-card"><div class="geo-icon">🔺</div><div class="geo-name">Triangular Prism</div><label>Base <input id="prism-b" type="number" class="geo-inp" placeholder="cm"></label><label>Height <input id="prism-h" type="number" class="geo-inp" placeholder="cm"></label><label>Length <input id="prism-l" type="number" class="geo-inp" placeholder="cm"></label><button class="action-btn primary" onclick="calcVolume('prism')" style="margin-top:4px;">Calculate</button><div class="geo-result" id="prism-result"></div></div>
+          <div class="geo-card"><div class="geo-icon">⚽</div><div class="geo-name">Sphere</div><label>Radius <input id="sph-r" type="number" class="geo-inp" placeholder="cm"></label><button class="action-btn primary" onclick="calcVolume('sphere')" style="margin-top:4px;">Calculate</button><div class="geo-result" id="sphere-result"></div></div>
+        </div>
+      </div>
+      <!-- Roman Numerals -->
+      <div id="math-roman" class="math-panel" style="display:none">
+        <h2 class="math-title">🏛️ Roman Numerals</h2>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+          <div class="geo-card" style="flex:1;min-width:220px;"><div class="geo-name">Number → Roman</div><input id="rom-num" type="number" min="1" max="3999" value="2024" class="geo-inp" oninput="convertRoman()"><div id="rom-result" style="font-size:32px;font-weight:900;color:var(--blue-d);margin-top:10px;letter-spacing:2px;"></div></div>
+          <div class="geo-card" style="flex:1;min-width:220px;"><div class="geo-name">Roman → Number</div><input id="rom-input" type="text" value="MMXXIV" class="geo-inp" placeholder="e.g. XIV" oninput="convertFromRoman()"><div id="rom-from-result" style="font-size:32px;font-weight:900;color:var(--purple);margin-top:10px;"></div></div>
+        </div>
+        <div style="background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);overflow:hidden;">
+          <div style="padding:12px 16px;font-size:13px;font-weight:800;color:var(--text-h);border-bottom:1px solid var(--border);">Roman Numeral Reference Table</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0;">
+            ${[['I','1'],['V','5'],['X','10'],['L','50'],['C','100'],['D','500'],['M','1000'],['IV','4'],['IX','9'],['XL','40'],['XC','90'],['CD','400'],['CM','900']].map(([r,n])=>`<div style="padding:10px 14px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);"><span style="font-size:16px;font-weight:900;color:var(--blue-d)">${r}</span><span style="font-size:13px;color:var(--text-m);margin-left:8px;">= ${n}</span></div>`).join('')}
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:14px;background:var(--blue-l);border-radius:var(--r-md);">
+          <div style="font-size:13px;font-weight:800;color:var(--blue-d);margin-bottom:10px;">🎯 Roman Numeral Quiz</div>
+          <div id="roman-quiz-q" style="font-size:18px;font-weight:900;color:var(--text-h);margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;"><input id="roman-quiz-ans" type="text" class="geo-inp" style="width:120px;" placeholder="Answer" onkeydown="if(event.key==='Enter')checkRomanQuiz()"><button class="action-btn primary" onclick="checkRomanQuiz()">Check</button><button class="action-btn" onclick="newRomanQuiz()">Next →</button></div>
+          <div id="roman-quiz-fb" style="margin-top:8px;font-size:14px;font-weight:700;min-height:24px;"></div>
+        </div>
+      </div>
     </div><!-- end sw-content -->
   </div><!-- end subject-workspace -->
 </div><!-- end workspace-math -->
@@ -519,17 +654,24 @@
   <div class="subject-workspace">
     <div class="sw-sidebar">
       <div class="sw-nav-title">🔬 Science</div>
-      <button class="sw-nav-btn active" id="sci-nav-periodic" onclick="sciTab('periodic')">⚗️ Periodic Table</button>
-      <button class="sw-nav-btn"        id="sci-nav-body"     onclick="sciTab('body')">🫀 Human Body</button>
-      <button class="sw-nav-btn"        id="sci-nav-explain"  onclick="sciTab('explain')">🤖 AI Explainer</button>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text-l);padding:8px 12px 4px;">BIOLOGY</div>
+      <button class="sw-nav-btn active" id="sci-nav-body"      onclick="sciTab('body')">🫀 Human Body</button>
+      <button class="sw-nav-btn"        id="sci-nav-plants"    onclick="sciTab('plants')">🌱 Plants</button>
+      <button class="sw-nav-btn"        id="sci-nav-animals"   onclick="sciTab('animals')">🐾 Animals</button>
+      <button class="sw-nav-btn"        id="sci-nav-foodchain" onclick="sciTab('foodchain')">🔗 Food Chain</button>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text-l);padding:8px 12px 4px;margin-top:4px;">PHYSICS &amp; CHEMISTRY</div>
+      <button class="sw-nav-btn"        id="sci-nav-periodic"  onclick="sciTab('periodic')">⚗️ Periodic Table</button>
+      <button class="sw-nav-btn"        id="sci-nav-matter"    onclick="sciTab('matter')">🧪 States of Matter</button>
+      <button class="sw-nav-btn"        id="sci-nav-forces"    onclick="sciTab('forces')">⚡ Forces &amp; Motion</button>
+      <button class="sw-nav-btn"        id="sci-nav-solar"     onclick="sciTab('solar')">🪐 Solar System</button>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text-l);padding:8px 12px 4px;margin-top:4px;">CLASS 5 TOPICS</div>
+      <button class="sw-nav-btn"        id="sci-nav-water"     onclick="sciTab('water')">💧 Water Cycle</button>
+      <button class="sw-nav-btn"        id="sci-nav-rocks"     onclick="sciTab('rocks')">🪨 Rocks &amp; Soil</button>
+      <button class="sw-nav-btn"        id="sci-nav-health"    onclick="sciTab('health')">🏃 Health &amp; Hygiene</button>
+      <button class="sw-nav-btn"        id="sci-nav-explain"   onclick="sciTab('explain')">🤖 AI Explainer</button>
     </div>
     <div class="sw-content" id="sci-content">
-      <div id="sci-periodic" class="math-panel">
-        <h2 class="math-title">⚗️ Periodic Table — Click an element to learn about it</h2>
-        <div id="periodic-table-container" style="overflow-x:auto;padding:8px 0;"></div>
-        <div id="element-detail" style="display:none;margin-top:16px;background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);padding:18px;"></div>
-      </div>
-      <div id="sci-body" class="math-panel" style="display:none">
+      <div id="sci-body" class="math-panel">
         <h2 class="math-title">🫀 Human Body Systems</h2>
         <div class="body-grid">
           <div class="body-card" onclick="explainBodySystem('Circulatory system - heart, blood vessels, blood')">❤️<div>Circulatory</div></div>
@@ -543,6 +685,137 @@
         </div>
         <div id="body-result" style="display:none;margin-top:16px;background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);padding:18px;"></div>
       </div>
+      <div id="sci-explain" class="math-panel" style="display:none">
+        <h2 class="math-title">🤖 Science Concept Explainer</h2>
+        <div style="font-size:14px;font-weight:600;color:var(--text-m);margin-bottom:12px;">Ask any science question and get a child-friendly explanation!</div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <input id="sci-question" type="text" class="q-field" style="flex:1;min-width:200px;" placeholder="e.g. How does photosynthesis work?">
+          <button class="ask-btn" onclick="askScience()">Ask AI ✦</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-l);width:100%;margin-bottom:4px;">POPULAR TOPICS:</span>
+          <button class="example-btn" onclick="askSciExample(this)">How does gravity work?</button>
+          <button class="example-btn" onclick="askSciExample(this)">What is photosynthesis?</button>
+          <button class="example-btn" onclick="askSciExample(this)">Why is the sky blue?</button>
+          <button class="example-btn" onclick="askSciExample(this)">How do volcanoes erupt?</button>
+          <button class="example-btn" onclick="askSciExample(this)">What is DNA?</button>
+          <button class="example-btn" onclick="askSciExample(this)">How does the heart work?</button>
+        </div>
+        <div id="sci-result" style="display:none;"><div class="math-solution-card" id="sci-answer-body"></div></div>
+        <div id="sci-loading" style="display:none;text-align:center;padding:24px;"><div class="loader" style="margin:0 auto 12px;"></div><div style="font-size:14px;font-weight:700;color:var(--text-m)">Asking Gemini…</div></div>
+      </div>
+      <!-- Plants -->
+      <div id="sci-plants" class="math-panel" style="display:none">
+        <h2 class="math-title">🌱 Plants — Class 5</h2>
+        <div class="body-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
+          <div class="body-card" onclick="showSciCard('parts-of-plant')">🌿<div>Parts of a Plant</div></div>
+          <div class="body-card" onclick="showSciCard('photosynthesis')">☀️<div>Photosynthesis</div></div>
+          <div class="body-card" onclick="showSciCard('pollination')">🐝<div>Pollination</div></div>
+          <div class="body-card" onclick="showSciCard('germination')">🌱<div>Germination</div></div>
+          <div class="body-card" onclick="showSciCard('plant-reproduction')">🌺<div>Reproduction</div></div>
+          <div class="body-card" onclick="showSciCard('leaves-and-roots')">🍃<div>Leaves &amp; Roots</div></div>
+        </div>
+        <div id="sci-plants-detail" class="sci-detail-card" style="display:none"></div>
+      </div>
+      <!-- Animals -->
+      <div id="sci-animals" class="math-panel" style="display:none">
+        <h2 class="math-title">🐾 Animals — Classification</h2>
+        <div class="body-grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
+          <div class="body-card" onclick="showSciCard('mammals')">🐘<div>Mammals</div></div>
+          <div class="body-card" onclick="showSciCard('birds')">🦅<div>Birds</div></div>
+          <div class="body-card" onclick="showSciCard('reptiles')">🦎<div>Reptiles</div></div>
+          <div class="body-card" onclick="showSciCard('amphibians')">🐸<div>Amphibians</div></div>
+          <div class="body-card" onclick="showSciCard('fish')">🐟<div>Fish</div></div>
+          <div class="body-card" onclick="showSciCard('insects')">🐛<div>Insects</div></div>
+          <div class="body-card" onclick="showSciCard('adaptation')">🌵<div>Adaptation</div></div>
+          <div class="body-card" onclick="showSciCard('migration')">🦋<div>Migration</div></div>
+        </div>
+        <div id="sci-animals-detail" class="sci-detail-card" style="display:none"></div>
+      </div>
+      <!-- Food Chain -->
+      <div id="sci-foodchain" class="math-panel" style="display:none">
+        <h2 class="math-title">🔗 Food Chain Builder</h2>
+        <p style="font-size:14px;color:var(--text-m);margin-bottom:16px;">Drag organisms to build a food chain. Arrow shows energy flow: Producer → Consumer → Apex Predator</p>
+        <div id="foodchain-container"></div>
+        <div style="margin-top:16px;" id="foodchain-result"></div>
+      </div>
+      <!-- Periodic Table -->
+      <div id="sci-periodic" class="math-panel" style="display:none">
+        <h2 class="math-title">⚗️ Periodic Table — Click an element to learn about it</h2>
+        <div id="periodic-table-container" style="overflow-x:auto;padding:8px 0;"></div>
+        <div id="element-detail" style="display:none;margin-top:16px;background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);padding:18px;"></div>
+      </div>
+      <!-- States of Matter -->
+      <div id="sci-matter" class="math-panel" style="display:none">
+        <h2 class="math-title">🧪 States of Matter</h2>
+        <div class="body-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
+          <div class="body-card" onclick="showSciCard('solid')">🧊<div>Solid</div></div>
+          <div class="body-card" onclick="showSciCard('liquid')">💧<div>Liquid</div></div>
+          <div class="body-card" onclick="showSciCard('gas')">💨<div>Gas</div></div>
+          <div class="body-card" onclick="showSciCard('melting-freezing')">🔥<div>Melting &amp; Freezing</div></div>
+          <div class="body-card" onclick="showSciCard('evaporation-condensation')">♨️<div>Evaporation</div></div>
+          <div class="body-card" onclick="showSciCard('sublimation')">🌫️<div>Sublimation</div></div>
+        </div>
+        <div id="sci-matter-detail" class="sci-detail-card" style="display:none"></div>
+      </div>
+      <!-- Forces & Motion -->
+      <div id="sci-forces" class="math-panel" style="display:none">
+        <h2 class="math-title">⚡ Forces &amp; Motion</h2>
+        <div class="body-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))">
+          <div class="body-card" onclick="showSciCard('gravity')">🍎<div>Gravity</div></div>
+          <div class="body-card" onclick="showSciCard('friction')">🛑<div>Friction</div></div>
+          <div class="body-card" onclick="showSciCard('magnetism')">🧲<div>Magnetism</div></div>
+          <div class="body-card" onclick="showSciCard('simple-machines')">⚙️<div>Simple Machines</div></div>
+          <div class="body-card" onclick="showSciCard('light')">💡<div>Light</div></div>
+          <div class="body-card" onclick="showSciCard('sound')">🔊<div>Sound</div></div>
+        </div>
+        <div id="sci-forces-detail" class="sci-detail-card" style="display:none"></div>
+      </div>
+      <!-- Solar System -->
+      <div id="sci-solar" class="math-panel" style="display:none">
+        <h2 class="math-title">🪐 Solar System</h2>
+        <canvas id="solar-canvas" width="700" height="300" style="max-width:100%;border-radius:var(--r-md);background:#0a0a1a;cursor:pointer;"></canvas>
+        <div id="solar-detail" style="margin-top:12px;min-height:60px;"></div>
+      </div>
+      <!-- Water Cycle -->
+      <div id="sci-water" class="math-panel" style="display:none">
+        <h2 class="math-title">💧 The Water Cycle</h2>
+        <canvas id="water-canvas" width="680" height="340" style="max-width:100%;border-radius:var(--r-md);border:2px solid var(--border);"></canvas>
+        <div class="body-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-top:14px;">
+          <div class="body-card" onclick="showSciCard('evaporation')">☀️<div>Evaporation</div></div>
+          <div class="body-card" onclick="showSciCard('condensation')">☁️<div>Condensation</div></div>
+          <div class="body-card" onclick="showSciCard('precipitation')">🌧️<div>Precipitation</div></div>
+          <div class="body-card" onclick="showSciCard('collection')">🌊<div>Collection</div></div>
+        </div>
+        <div id="sci-water-detail" class="sci-detail-card" style="display:none"></div>
+      </div>
+      <!-- Rocks & Soil -->
+      <div id="sci-rocks" class="math-panel" style="display:none">
+        <h2 class="math-title">🪨 Rocks &amp; Soil</h2>
+        <div class="body-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+          <div class="body-card" onclick="showSciCard('igneous-rocks')">🌋<div>Igneous Rocks</div></div>
+          <div class="body-card" onclick="showSciCard('sedimentary-rocks')">🏔️<div>Sedimentary</div></div>
+          <div class="body-card" onclick="showSciCard('metamorphic-rocks')">💎<div>Metamorphic</div></div>
+          <div class="body-card" onclick="showSciCard('soil-types')">🌱<div>Types of Soil</div></div>
+          <div class="body-card" onclick="showSciCard('erosion')">💨<div>Erosion</div></div>
+          <div class="body-card" onclick="showSciCard('rock-cycle')">🔄<div>Rock Cycle</div></div>
+        </div>
+        <div id="sci-rocks-detail" class="sci-detail-card" style="display:none"></div>
+      </div>
+      <!-- Health & Hygiene -->
+      <div id="sci-health" class="math-panel" style="display:none">
+        <h2 class="math-title">🏃 Health &amp; Hygiene</h2>
+        <div class="body-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+          <div class="body-card" onclick="showSciCard('balanced-diet')">🥗<div>Balanced Diet</div></div>
+          <div class="body-card" onclick="showSciCard('food-groups')">🍎<div>Food Groups</div></div>
+          <div class="body-card" onclick="showSciCard('personal-hygiene')">🧼<div>Personal Hygiene</div></div>
+          <div class="body-card" onclick="showSciCard('diseases-germs')">🦠<div>Diseases &amp; Germs</div></div>
+          <div class="body-card" onclick="showSciCard('first-aid')">🩹<div>First Aid</div></div>
+          <div class="body-card" onclick="showSciCard('exercise-sleep')">😴<div>Exercise &amp; Sleep</div></div>
+        </div>
+        <div id="sci-health-detail" class="sci-detail-card" style="display:none"></div>
+      </div>
+      <!-- AI Explainer -->
       <div id="sci-explain" class="math-panel" style="display:none">
         <h2 class="math-title">🤖 Science Concept Explainer</h2>
         <div style="font-size:14px;font-weight:600;color:var(--text-m);margin-bottom:12px;">Ask any science question and get a child-friendly explanation!</div>
