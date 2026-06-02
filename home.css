@@ -760,3 +760,88 @@
   color: #a5b4fc;
   border: 1px solid rgba(255,255,255,.12);
 }
+
+/* ═══════════════════════════════════════════
+   MORE STORIES — External Links Section
+═══════════════════════════════════════════ */
+.more-stories-section {
+  grid-column: 1 / -1; /* span full grid width */
+  background: var(--white);
+  border: 2px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px 22px;
+  margin-top: 8px;
+}
+.more-stories-title {
+  font-size: 14px; font-weight: 900;
+  color: var(--text-h); margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1.5px solid var(--border);
+}
+.more-stories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+.more-story-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--r-md);
+  text-decoration: none;
+  background: var(--bg-page);
+  transition: all .18s;
+  cursor: pointer;
+}
+.more-story-link:hover {
+  border-color: #f97316;
+  background: #fff7ed;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(249,115,22,.15);
+}
+.msl-icon {
+  font-size: 22px; flex-shrink: 0;
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--white); border-radius: 10px;
+  border: 1.5px solid var(--border);
+}
+.msl-body { flex: 1; min-width: 0; }
+.msl-name {
+  font-size: 13px; font-weight: 800;
+  color: var(--text-h); white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.msl-desc {
+  font-size: 11px; font-weight: 500;
+  color: var(--text-m); line-height: 1.4;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.msl-arrow {
+  font-size: 14px; font-weight: 900;
+  color: var(--text-l); flex-shrink: 0;
+  transition: all .15s;
+}
+.more-story-link:hover .msl-arrow {
+  color: #f97316;
+  transform: translate(2px, -2px);
+}
+
+/* More Stories button — styled differently from genre filters */
+.genre-btn[data-genre="all"] {
+  background: linear-gradient(135deg, #f97316, #ef4444);
+  border-color: #ea580c;
+  color: white;
+  font-weight: 800;
+}
+.genre-btn[data-genre="all"]:hover {
+  background: linear-gradient(135deg, #ea580c, #dc2626);
+  border-color: #dc2626;
+  color: white;
+  transform: translateY(-1px);
+}
+.genre-btn[data-genre="all"].active {
+  background: linear-gradient(135deg, #ea580c, #dc2626);
+  border-color: #dc2626;
+  color: white;
+}
