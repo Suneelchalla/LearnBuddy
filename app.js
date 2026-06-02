@@ -808,6 +808,11 @@ function onWordsSelected(words) {
   pop.style.left = Math.min(rect.left + rect.width / 2, window.innerWidth - 225) + 'px';
   pop.style.top  = Math.min(rect.bottom + 8, window.innerHeight - 310) + 'px';
   pop.classList.add('show');
+
+  // ── Always pre-populate the active tab so links are ready ──
+  if (curTab === 'search')    updateSearchLinks(text);
+  if (curTab === 'translate') { const o = document.getElementById('tr-original'); if (o) o.textContent = text; updateTranslateLinks(text); }
+  if (curTab === 'dict')      lookupDictionary(text);
 }
 
 function clearSelDisplay() {
@@ -823,8 +828,12 @@ function clearSelection() {
 function useSelectedText() {
   const t = document.getElementById('sel-text-display').textContent.trim();
   if (!t) return;
-  if (curTab === 'search') { updateSearchLinks(t); return; }
-  if (curTab === 'notebook') switchTab('explain');
+  selText = t;
+  document.getElementById('q-field').value = t;
+  if (curTab === 'search')    { updateSearchLinks(t); return; }
+  if (curTab === 'translate') { showTranslateUI(t); return; }
+  if (curTab === 'dict')      { lookupDictionary(t); return; }
+  if (curTab === 'notebook')  switchTab('explain');
   if (needKey()) return;
   callGemini(curTab, t);
 }
@@ -973,15 +982,17 @@ function switchTab(tab) {
 
   if (tab === 'search') {
     document.getElementById('search-area').style.display = 'flex';
-    updateSearchLinks(document.getElementById('q-field').value || '');
+    const cur = document.getElementById('q-field').value || selText || '';
+    if (cur) document.getElementById('q-field').value = cur;
+    updateSearchLinks(cur);
   } else if (tab === 'translate') {
     document.getElementById('translate-area').style.display = 'flex';
-    const cur = document.getElementById('q-field').value.trim();
-    if (cur) showTranslateUI(cur);
+    const cur = document.getElementById('q-field').value.trim() || selText || '';
+    if (cur) { document.getElementById('q-field').value = cur; showTranslateUI(cur); }
   } else if (tab === 'dict') {
     document.getElementById('dict-area').style.display = 'flex';
-    const cur = document.getElementById('q-field').value.trim();
-    if (cur) lookupDictionary(cur);
+    const cur = document.getElementById('q-field').value.trim() || selText || '';
+    if (cur) { document.getElementById('q-field').value = cur; lookupDictionary(cur); }
   } else if (tab === 'notebook') {
     document.getElementById('notebook-area').style.display = 'flex';
     renderNotebook();
@@ -1729,13 +1740,19 @@ function showTranslateUI(text) {
 
 // ── OPEN EXTERNAL LINKS (force new window, bypass GitHub Pages routing) ──
 function openTranslate() {
-  const enc  = encodeURIComponent(document.getElementById('tr-original')?.textContent || '');
+  const raw = document.getElementById('tr-original')?.textContent || '';
+  const text = (raw && raw !== 'Type or select text to translate') ? raw : selText;
+  const enc  = encodeURIComponent(text || '');
+  if (!enc) { toast('⚠️ Select or type text to translate first'); return; }
   const lang = translateTargetLang || 'ta';
   const url  = 'https://translate.google.com/?sl=auto&tl=' + lang + '&text=' + enc + '&op=translate';
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 function openDeepL() {
-  const enc  = encodeURIComponent(document.getElementById('tr-original')?.textContent || '');
+  const raw = document.getElementById('tr-original')?.textContent || '';
+  const text = (raw && raw !== 'Type or select text to translate') ? raw : selText;
+  const enc  = encodeURIComponent(text || '');
+  if (!enc) { toast('⚠️ Select or type text to translate first'); return; }
   const lang = translateTargetLang || 'ta';
   const url  = 'https://www.deepl.com/translator#auto/' + lang + '/' + enc;
   window.open(url, '_blank', 'noopener,noreferrer');
