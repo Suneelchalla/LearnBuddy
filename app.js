@@ -132,11 +132,16 @@ function _addPageDirect(dataUrl, name) {
     document.getElementById('btn-pdf').style.display = '';
     document.getElementById('btn-clr').style.display = '';
     document.getElementById('btn-max').style.display = '';
+    // Persist to localStorage so the image survives a page refresh
+    // Debounced so multi-page PDFs only trigger one save at the end
+    clearTimeout(_saveDebounceTimer);
+    _saveDebounceTimer = setTimeout(saveSessionToLS, 400);
   } catch (e) {
     toast('❌ Error loading image: ' + (e.message || e));
     console.error(e);
   }
 }
+let _saveDebounceTimer = null;
 
 function renderThumbs() {
   const bar = document.getElementById('thumb-bar');
@@ -509,6 +514,7 @@ async function extractOCR() {
     // Show word area and status
     setStatus('done', '✅ ' + wordBoxes.length + ' words mapped — click a word, or drag to select multiple!');
     toast('✅ Words mapped! Click any word directly on the image.');
+    saveSessionToLS(); // persist word boxes so they survive a refresh
 
   } catch (err) {
     setStatus('err', '❌ Failed: ' + (err.message || '').slice(0, 80));
