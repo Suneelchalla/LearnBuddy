@@ -754,6 +754,7 @@ header a:has(.logo-mark):hover { opacity: .88; }
   background: var(--white); border: 2px solid var(--border);
   border-radius: var(--r-md); cursor: pointer; text-decoration: none;
   transition: all .2s; text-align: center;
+  font-family: var(--font); -webkit-appearance: none; appearance: none;
 }
 .search-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
 .sc-em  { font-size: 30px; }
