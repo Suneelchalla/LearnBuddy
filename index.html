@@ -156,6 +156,66 @@
 
   </div><!-- end subjects-grid -->
 
+  <!-- ── WORD OF THE DAY ── -->
+  <div class="wotd-wrap" id="wotd-section">
+    <div class="wotd-card" id="wotd-card">
+
+      <!-- Header row -->
+      <div class="wotd-header">
+        <span class="wotd-badge">✨ Word of the Day</span>
+        <span class="wotd-date" id="wotd-date"></span>
+        <button class="wotd-refresh-btn" onclick="refreshWOTD()" title="New word">🔄</button>
+      </div>
+
+      <!-- Loading skeleton -->
+      <div id="wotd-loading" class="wotd-loading">
+        <div class="wotd-skel wotd-skel-word"></div>
+        <div class="wotd-skel wotd-skel-pos"></div>
+        <div class="wotd-skel wotd-skel-def"></div>
+      </div>
+
+      <!-- Content (hidden until loaded) -->
+      <div id="wotd-content" style="display:none;">
+        <div class="wotd-main">
+          <div class="wotd-left">
+            <div class="wotd-word" id="wotd-word"></div>
+            <div class="wotd-meta">
+              <span class="wotd-pos" id="wotd-pos"></span>
+              <span class="wotd-phonetic" id="wotd-phonetic"></span>
+              <button class="wotd-speak-btn" id="wotd-speak" onclick="speakWOTD()" title="Hear pronunciation">🔊</button>
+            </div>
+            <div class="wotd-meaning" id="wotd-meaning"></div>
+            <div class="wotd-example" id="wotd-example"></div>
+          </div>
+          <div class="wotd-right">
+            <div class="wotd-emoji" id="wotd-emoji"></div>
+          </div>
+        </div>
+
+        <!-- Fun fact -->
+        <div class="wotd-fact" id="wotd-fact-wrap">
+          <span class="wotd-fact-label">⭐ Fun fact</span>
+          <span id="wotd-fact"></span>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="wotd-actions">
+          <button class="wotd-action-btn wotd-save" onclick="saveWOTD()">📒 Add to Notebook</button>
+          <button class="wotd-action-btn wotd-explore" onclick="exploreWOTD()">🔍 Explore Word</button>
+          <button class="wotd-action-btn wotd-quiz" onclick="quizWOTD()">🎯 Quick Quiz</button>
+        </div>
+
+        <!-- Mini quiz (hidden until clicked) -->
+        <div id="wotd-quiz-wrap" style="display:none;" class="wotd-quiz-area">
+          <div class="wotd-quiz-q" id="wotd-quiz-q"></div>
+          <div class="wotd-quiz-opts" id="wotd-quiz-opts"></div>
+          <div class="wotd-quiz-fb" id="wotd-quiz-fb"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Quick stats bar -->
   <div class="home-stats">
     <div class="home-stat">
@@ -371,8 +431,8 @@
           <button class="tr-lang-btn" data-lang="zh-CN" onclick="setTranslateLang(this)">Chinese</button>
           <button class="tr-lang-btn" data-lang="ar" onclick="setTranslateLang(this)">Arabic</button>
         </div>
-        <a id="tr-open-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;width:100%;background:linear-gradient(135deg,#4285f4,#1a73e8);color:white;border-radius:var(--r-md);font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(66,133,244,.35);transition:all .18s;margin-bottom:12px;text-decoration:none;box-sizing:border-box;">🌐 Open in Google Translate</a>
-        <div style="font-size:11px;font-weight:600;color:var(--text-l);text-align:center;">Opens in a new tab — free, no sign-in needed</div>
+        <button id="tr-open-btn" onclick="openTranslate()" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;width:100%;background:linear-gradient(135deg,#4285f4,#1a73e8);color:white;border-radius:var(--r-md);border:none;font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(66,133,244,.35);transition:all .18s;margin-bottom:12px;">🌐 Open in Google Translate</button>
+        <button id="tr-deepl-btn" onclick="openDeepL()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;width:100%;background:var(--white);color:var(--text-m);border:2px solid var(--border);border-radius:var(--r-md);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;margin-bottom:12px;">🔤 Also try DeepL</button>
         <div style="font-size:11px;font-weight:600;color:var(--text-l);text-align:center;">Both links open free in a new tab</div>
       </div>
     </div>
@@ -388,10 +448,10 @@
         <div class="search-for-label">Searching for</div>
         <div class="search-term-display" id="search-term">your topic</div>
         <div class="search-grid">
-          <a class="search-card g" id="sl-g" href="#" target="_blank" rel="noopener noreferrer"><div class="sc-em">🔍</div><div class="sc-title">Google</div><div class="sc-desc">Search the web</div></a>
-          <a class="search-card w" id="sl-w" href="#" target="_blank" rel="noopener noreferrer"><div class="sc-em">📖</div><div class="sc-title">Wikipedia</div><div class="sc-desc">Free encyclopedia</div></a>
-          <a class="search-card k" id="sl-k" href="#" target="_blank" rel="noopener noreferrer"><div class="sc-em">🎓</div><div class="sc-title">Khan Academy</div><div class="sc-desc">Free lessons</div></a>
-          <a class="search-card y" id="sl-y" href="#" target="_blank" rel="noopener noreferrer"><div class="sc-em">▶️</div><div class="sc-title">YouTube</div><div class="sc-desc">Kids videos</div></a>
+          <button class="search-card g" id="sl-g" onclick="openSearchLink('g')"><div class="sc-em">🔍</div><div class="sc-title">Google</div><div class="sc-desc">Search the web</div></button>
+          <button class="search-card w" id="sl-w" onclick="openSearchLink('w')"><div class="sc-em">📖</div><div class="sc-title">Wikipedia</div><div class="sc-desc">Free encyclopedia</div></button>
+          <button class="search-card k" id="sl-k" onclick="openSearchLink('k')"><div class="sc-em">🎓</div><div class="sc-title">Khan Academy</div><div class="sc-desc">Free lessons</div></button>
+          <button class="search-card y" id="sl-y" onclick="openSearchLink('y')"><div class="sc-em">▶️</div><div class="sc-title">YouTube</div><div class="sc-desc">Kids videos</div></button>
         </div>
         <div class="search-free-note">🔓 All links open free in a new tab</div>
       </div>
@@ -713,34 +773,10 @@
           <div class="geo-card" style="flex:1;min-width:220px;"><div class="geo-name">Number → Roman</div><input id="rom-num" type="number" min="1" max="3999" value="2024" class="geo-inp" oninput="convertRoman()"><div id="rom-result" style="font-size:32px;font-weight:900;color:var(--blue-d);margin-top:10px;letter-spacing:2px;"></div></div>
           <div class="geo-card" style="flex:1;min-width:220px;"><div class="geo-name">Roman → Number</div><input id="rom-input" type="text" value="MMXXIV" class="geo-inp" placeholder="e.g. XIV" oninput="convertFromRoman()"><div id="rom-from-result" style="font-size:32px;font-weight:900;color:var(--purple);margin-top:10px;"></div></div>
         </div>
-        <div style="background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin-bottom:16px;">
-          <div style="padding:12px 16px;font-size:14px;font-weight:900;color:var(--text-h);border-bottom:2px solid var(--border);background:var(--cream);">📜 Roman Numeral Cheat Sheet — memorise these 7 symbols!</div>
-
-          <!-- The 7 base symbols — large and visual -->
-          <div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:2px solid var(--border);">
-            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#eef2ff;"><div style="font-size:28px;font-weight:900;color:#4f6ef7;">I</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">1</div><div style="font-size:10px;color:#64748b;font-weight:700;">one</div></div>
-            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#fef3c7;"><div style="font-size:28px;font-weight:900;color:#d97706;">V</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">5</div><div style="font-size:10px;color:#64748b;font-weight:700;">five</div></div>
-            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#dcfce7;"><div style="font-size:28px;font-weight:900;color:#16a34a;">X</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">10</div><div style="font-size:10px;color:#64748b;font-weight:700;">ten</div></div>
-            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#fae8ff;"><div style="font-size:28px;font-weight:900;color:#9333ea;">L</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">50</div><div style="font-size:10px;color:#64748b;font-weight:700;">fifty</div></div>
-            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#ffedd5;"><div style="font-size:28px;font-weight:900;color:#ea580c;">C</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">100</div><div style="font-size:10px;color:#64748b;font-weight:700;">hundred</div></div>
-            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#fce7f3;"><div style="font-size:28px;font-weight:900;color:#db2777;">D</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">500</div><div style="font-size:10px;color:#64748b;font-weight:700;">five hundred</div></div>
-            <div style="padding:14px 8px;text-align:center;background:#e0f2fe;"><div style="font-size:28px;font-weight:900;color:#0284c7;">M</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">1000</div><div style="font-size:10px;color:#64748b;font-weight:700;">thousand</div></div>
-          </div>
-
-          <!-- The subtraction rules — common combos -->
-          <div style="padding:10px 14px;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text-l);border-bottom:1px solid var(--border);background:#f8faff;">✂️ Subtraction rule — smaller before bigger means subtract</div>
-          <div style="display:grid;grid-template-columns:repeat(6,1fr);">
-            <div style="padding:10px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#4f6ef7;">IV</div><div style="font-size:14px;font-weight:800;color:#1e293b;">4</div><div style="font-size:9px;color:#94a3b8;">5−1</div></div>
-            <div style="padding:10px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#4f6ef7;">IX</div><div style="font-size:14px;font-weight:800;color:#1e293b;">9</div><div style="font-size:9px;color:#94a3b8;">10−1</div></div>
-            <div style="padding:10px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#16a34a;">XL</div><div style="font-size:14px;font-weight:800;color:#1e293b;">40</div><div style="font-size:9px;color:#94a3b8;">50−10</div></div>
-            <div style="padding:10px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#16a34a;">XC</div><div style="font-size:14px;font-weight:800;color:#1e293b;">90</div><div style="font-size:9px;color:#94a3b8;">100−10</div></div>
-            <div style="padding:10px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#ea580c;">CD</div><div style="font-size:14px;font-weight:800;color:#1e293b;">400</div><div style="font-size:9px;color:#94a3b8;">500−100</div></div>
-            <div style="padding:10px 6px;text-align:center;border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#ea580c;">CM</div><div style="font-size:14px;font-weight:800;color:#1e293b;">900</div><div style="font-size:9px;color:#94a3b8;">1000−100</div></div>
-          </div>
-
-          <!-- Memory tip -->
-          <div style="padding:10px 14px;font-size:12px;font-weight:700;color:#1e40af;background:#eff6ff;border-top:1px solid #bfdbfe;">
-            💡 <strong>Memory trick:</strong> <span style="letter-spacing:.05em;">I</span> Value <span style="letter-spacing:.05em;">X</span>tra <span style="letter-spacing:.05em;">L</span>arge <span style="letter-spacing:.05em;">C</span>ows <span style="letter-spacing:.05em;">D</span>rink <span style="letter-spacing:.05em;">M</span>ilk &nbsp;→&nbsp; <strong>I&nbsp; V&nbsp; X&nbsp; L&nbsp; C&nbsp; D&nbsp; M</strong>
+        <div style="background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);overflow:hidden;">
+          <div style="padding:12px 16px;font-size:13px;font-weight:800;color:var(--text-h);border-bottom:1px solid var(--border);">Roman Numeral Reference Table</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0;">
+            ${[['I','1'],['V','5'],['X','10'],['L','50'],['C','100'],['D','500'],['M','1000'],['IV','4'],['IX','9'],['XL','40'],['XC','90'],['CD','400'],['CM','900']].map(([r,n])=>`<div style="padding:10px 14px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);"><span style="font-size:16px;font-weight:900;color:var(--blue-d)">${r}</span><span style="font-size:13px;color:var(--text-m);margin-left:8px;">= ${n}</span></div>`).join('')}
           </div>
         </div>
         <div style="margin-top:16px;padding:14px;background:var(--blue-l);border-radius:var(--r-md);">
@@ -791,6 +827,25 @@
           <div class="body-card" onclick="explainBodySystem('Immune system - white blood cells, fighting infection')">🛡️<div>Immune</div></div>
         </div>
         <div id="body-result" style="display:none;margin-top:16px;background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);padding:18px;"></div>
+      </div>
+      <div id="sci-explain" class="math-panel" style="display:none">
+        <h2 class="math-title">🤖 Science Concept Explainer</h2>
+        <div style="font-size:14px;font-weight:600;color:var(--text-m);margin-bottom:12px;">Ask any science question and get a child-friendly explanation!</div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <input id="sci-question" type="text" class="q-field" style="flex:1;min-width:200px;" placeholder="e.g. How does photosynthesis work?">
+          <button class="ask-btn" onclick="askScience()">Ask AI ✦</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-l);width:100%;margin-bottom:4px;">POPULAR TOPICS:</span>
+          <button class="example-btn" onclick="askSciExample(this)">How does gravity work?</button>
+          <button class="example-btn" onclick="askSciExample(this)">What is photosynthesis?</button>
+          <button class="example-btn" onclick="askSciExample(this)">Why is the sky blue?</button>
+          <button class="example-btn" onclick="askSciExample(this)">How do volcanoes erupt?</button>
+          <button class="example-btn" onclick="askSciExample(this)">What is DNA?</button>
+          <button class="example-btn" onclick="askSciExample(this)">How does the heart work?</button>
+        </div>
+        <div id="sci-result" style="display:none;"><div class="math-solution-card" id="sci-answer-body"></div></div>
+        <div id="sci-loading" style="display:none;text-align:center;padding:24px;"><div class="loader" style="margin:0 auto 12px;"></div><div style="font-size:14px;font-weight:700;color:var(--text-m)">Asking Gemini…</div></div>
       </div>
       <!-- Plants -->
       <div id="sci-plants" class="math-panel" style="display:none">
@@ -1080,8 +1135,8 @@
             <span id="story-selected-word" style="font-size:15px;font-weight:900;color:var(--text-h);"></span>
             <div style="flex:1"></div>
             <button class="action-btn" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('dict')">📚 Dictionary</button>
-            <a id="story-translate-btn" class="action-btn" style="height:28px;padding:0 10px;font-size:11px;display:inline-flex;align-items:center;text-decoration:none;" href="#" target="_blank" rel="noopener noreferrer">🌍 Translate</a>
-            <a id="story-search-btn" class="action-btn" style="height:28px;padding:0 10px;font-size:11px;display:inline-flex;align-items:center;text-decoration:none;" href="#" target="_blank" rel="noopener noreferrer">🔍 Search</a>
+            <button class="action-btn" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('translate')">🌍 Translate</button>
+            <button class="action-btn" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('search')">🔍 Search</button>
             <button class="action-btn primary" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('explain')">🧠 Explain</button>
             <button class="action-btn" style="height:28px;padding:0 8px;font-size:11px" onclick="storyAction('tts')">🔊</button>
           </div>
@@ -1171,30 +1226,6 @@
         <button class="ask-btn" style="padding:8px 14px;font-size:13px" onclick="goMaxQuery()">Ask AI</button>
       </div>
       <div id="max-r-content" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:thin;"></div>
-    </div>
-  </div>
-</div>
-
-<!-- API Key Modal -->
-<div id="api-key-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:32px 28px;width:min(420px,92vw);font-family:var(--font);position:relative;">
-    <button onclick="closeApiModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-l);line-height:1;">✕</button>
-    <div style="font-size:32px;text-align:center;margin-bottom:8px;">🔑</div>
-    <h2 style="font-size:20px;font-weight:900;color:var(--text-h);text-align:center;margin:0 0 6px;">Gemini API Key Needed</h2>
-    <p style="font-size:13px;color:var(--text-m);text-align:center;margin:0 0 20px;line-height:1.6;">This feature uses Google Gemini AI.<br>Paste your free API key below to continue.</p>
-    <input id="modal-api-input" type="password" placeholder="Paste your Gemini API key here…"
-      style="width:100%;padding:13px 14px;border:2.5px solid var(--border);border-radius:12px;font-family:var(--font);font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;transition:border-color .2s;"
-      oninput="onModalKeyInput(this)" onkeydown="if(event.key==='Enter')saveApiKey()">
-    <div id="modal-key-status" style="font-size:12px;font-weight:700;min-height:18px;margin-bottom:14px;text-align:center;"></div>
-    <button onclick="saveApiKey()" id="modal-save-btn"
-      style="width:100%;padding:13px;background:linear-gradient(135deg,#4f6ef7,#8b5cf6);color:white;border:none;border-radius:12px;font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;transition:opacity .2s;">
-      ✅ Save &amp; Continue
-    </button>
-    <div style="text-align:center;margin-top:14px;">
-      <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer"
-        style="font-size:12px;font-weight:700;color:var(--blue);text-decoration:none;">
-        🆓 Get a free Gemini API key at aistudio.google.com →
-      </a>
     </div>
   </div>
 </div>
@@ -1433,13 +1464,6 @@ function storyWordClick(word) {
   wordDisplay.textContent = word;
   bar.style.display = 'flex';
 
-  // Update anchor hrefs directly — avoids popup-blocker on GitHub Pages
-  const enc = encodeURIComponent(word);
-  const searchBtn = document.getElementById('story-search-btn');
-  const transBtn  = document.getElementById('story-translate-btn');
-  if (searchBtn) searchBtn.href = 'https://www.google.com/search?q=' + enc;
-  if (transBtn)  transBtn.href  = 'https://translate.google.com/?sl=auto&tl=ta&text=' + enc + '&op=translate';
-
   // Auto-fill the query field for the AI panel
   const qField = document.getElementById('story-q-field');
   if (qField) qField.value = word;
@@ -1450,6 +1474,14 @@ function storyAction(action) {
   const word = storySelText;
   if (!word) return;
 
+  if (action === 'search') {
+    window.open('https://www.google.com/search?q=' + encodeURIComponent(word), '_blank', 'noopener,noreferrer');
+    return;
+  }
+  if (action === 'translate') {
+    window.open('https://translate.google.com/?sl=auto&tl=ta&text=' + encodeURIComponent(word) + '&op=translate', '_blank', 'noopener,noreferrer');
+    return;
+  }
   if (action === 'dict') {
     // Reuse main dictionary lookup, show in story panel
     document.getElementById('story-ai-panel').style.display = 'flex';
