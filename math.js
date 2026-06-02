@@ -9,6 +9,8 @@ function goHome() {
   document.getElementById('home-btn').style.display = 'none';
   document.getElementById('page-tagline').textContent = 'Smart Learning Platform';
   loadHomeStats();
+  // Clear hash without triggering hashchange
+  history.replaceState(null, '', window.location.pathname + window.location.search);
 }
 
 function openSubject(name) {
@@ -17,6 +19,10 @@ function openSubject(name) {
   const ws = document.getElementById('workspace-' + name);
   if (ws) ws.style.display = '';
   document.getElementById('home-btn').style.display = '';
+  // Update URL hash (allows back button, Ctrl+click, bookmark)
+  if (window.location.hash !== '#' + name) {
+    history.replaceState(null, '', '#' + name);
+  }
   const titles = {
     lesson: '📖 Lesson Viewer', math: '➗ Mathematics',
     science: '🔬 Science', language: '🌍 Languages', notebook: '📒 My Notebook'
@@ -560,3 +566,40 @@ function renderNotebookStandalone() {
       '</div>';
   }).join('');
 }
+
+// ── HASH ROUTER ──────────────────────────────
+// Enables Ctrl+click / right-click → open in new tab
+// and browser back/forward navigation
+const VALID_SUBJECTS = ['lesson','math','science','language','notebook'];
+
+function handleHashRoute() {
+  const hash = window.location.hash.replace('#','').toLowerCase().trim();
+  if (VALID_SUBJECTS.includes(hash)) {
+    openSubject(hash);
+  } else {
+    // No hash or unknown hash → show home
+    goHome();
+  }
+}
+
+// Update URL hash when navigating (without triggering hashchange)
+const _origOpenSubject = openSubject;
+function openSubjectAndRoute(name) {
+  history.pushState(null, '', '#' + name);
+  _origOpenSubject(name);
+}
+
+function goHomeAndRoute() {
+  history.pushState(null, '', window.location.pathname); // remove hash
+  goHome();
+}
+
+// Listen for hash changes (back/forward browser buttons)
+window.addEventListener('hashchange', handleHashRoute);
+
+// Override openSubject globally so all callers update the URL
+// (redefine after DOMContentLoaded to ensure math.js functions are ready)
+document.addEventListener('DOMContentLoaded', () => {
+  // Route on first load
+  handleHashRoute();
+});
