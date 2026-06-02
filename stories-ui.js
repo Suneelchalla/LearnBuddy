@@ -8,15 +8,17 @@ let storySelText = '';
 // ── INIT STORIES ─────────────────────────────
 function initStories() {
   renderGenreFilters();
-  // Show grid immediately on next paint so spinner shows first
-  const loading = document.getElementById('story-loading');
-  if (loading) loading.style.display = 'flex';
-  // Yield to browser paint, then render all cards
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      renderStoryGrid('all');
-    });
+
+  // Step 1: render first genre immediately (fast — only ~8 cards)
+  // so user sees something right away instead of waiting for all 52
+  const firstGenre = 'Indian Mythology';
+  renderStoryGrid(firstGenre);
+
+  // Highlight the correct filter button
+  document.querySelectorAll('.genre-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.genre === firstGenre);
   });
+  storyFilter = firstGenre;
 }
 
 // ── GENRE FILTER BUTTONS ──────────────────────
@@ -46,8 +48,7 @@ function filterStories(genre) {
   storyFilter = genre;
   document.querySelectorAll('.genre-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.genre === genre));
-  // Render on next frame so button highlight shows immediately
-  requestAnimationFrame(() => renderStoryGrid(genre));
+  renderStoryGrid(genre);
 }
 
 // ── STORY GRID ────────────────────────────────
@@ -62,31 +63,44 @@ const GENRE_CARD_STYLE = {
   'Real Life Heroes':       { bg: 'linear-gradient(135deg,#059669,#0284c7)',   text: '#ecfdf5' },
 };
 
+function makeCardHTML(story) {
+  const style = GENRE_CARD_STYLE[story.genre] || { bg: 'linear-gradient(135deg,#4f6ef7,#8b5cf6)', text: '#eef2ff' };
+  return `<div class="story-card" onclick="openStory('${story.id}')">
+    <div class="story-card-banner" style="background:${style.bg};">
+      <div class="story-card-emoji">${story.emoji}</div>
+      <div class="story-card-genre-pill" style="color:${style.text}">${story.genre}</div>
+    </div>
+    <div class="story-card-body">
+      <div class="story-card-title">${story.title}</div>
+      <div class="story-card-summary">${story.summary}</div>
+      <div class="story-card-footer">
+        <span class="story-word-count">~${story.words} words</span>
+        <span class="story-read-btn">Read →</span>
+      </div>
+    </div>
+  </div>`;
+}
+
 function renderStoryGrid(genre) {
   const grid = document.getElementById('story-grid');
   if (!grid) return;
   const filtered = genre === 'all' ? STORIES : STORIES.filter(s => s.genre === genre);
 
-  // Build all HTML in one pass then write once — fastest DOM update
-  const html = filtered.map(story => {
-    const style = GENRE_CARD_STYLE[story.genre] || { bg: 'linear-gradient(135deg,#4f6ef7,#8b5cf6)', text: '#eef2ff' };
-    return `<div class="story-card" onclick="openStory('${story.id}')">
-      <div class="story-card-banner" style="background:${style.bg};">
-        <div class="story-card-emoji">${story.emoji}</div>
-        <div class="story-card-genre-pill" style="color:${style.text}">${story.genre}</div>
-      </div>
-      <div class="story-card-body">
-        <div class="story-card-title">${story.title}</div>
-        <div class="story-card-summary">${story.summary}</div>
-        <div class="story-card-footer">
-          <span class="story-word-count">~${story.words} words</span>
-          <span class="story-read-btn">Read →</span>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+  if (filtered.length <= 16) {
+    // Small set — render all at once instantly
+    grid.innerHTML = filtered.map(makeCardHTML).join('');
+    return;
+  }
 
-  grid.innerHTML = html; // single DOM write = fast
+  // Large set (all 52) — render first 16 immediately, rest after paint
+  const FIRST = 16;
+  grid.innerHTML = filtered.slice(0, FIRST).map(makeCardHTML).join('');
+
+  // Append remaining cards after browser has painted the first batch
+  setTimeout(() => {
+    const rest = filtered.slice(FIRST).map(makeCardHTML).join('');
+    grid.insertAdjacentHTML('beforeend', rest);
+  }, 50);
 }
 
 // ── OPEN / CLOSE STORY READER ─────────────────
