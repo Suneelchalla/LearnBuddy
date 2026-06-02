@@ -3,45 +3,158 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LearnBuddy — Smart Lesson Explorer</title>
-
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <!-- External Libraries -->
+  <title>LearnBuddy — Smart Learning Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-  <!-- App Styles -->
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="home.css">
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════
-     HEADER
-═══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════
+     GLOBAL HEADER
+══════════════════════════════════════════════ -->
 <header class="header">
+  <button class="home-btn" id="home-btn" onclick="goHome()" title="Home" style="display:none">
+    ← Home
+  </button>
   <div class="logo-mark">📚</div>
   <div class="logo-text">Learn<span>Buddy</span></div>
-  <div class="logo-tagline">Smart Lesson Explorer</div>
+  <div class="logo-tagline" id="page-tagline">Smart Learning Platform</div>
   <div class="hdr-spacer"></div>
   <div class="api-zone">
     <span class="api-zone-label" title="Gemini API Key">🔑</span>
-    <input class="api-input" type="password" id="api-input" placeholder="Paste Gemini API key…" autocomplete="off" title="Get a free key at aistudio.google.com">
-    <div class="api-status" id="api-status" title="API key status"></div>
+    <input class="api-input" type="password" id="api-input" placeholder="Paste Gemini API key…" autocomplete="off">
+    <div class="api-status" id="api-status"></div>
   </div>
 </header>
 
-<!-- ═══════════════════════════════════════
-     MAIN BODY
-═══════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════════
+     HOME SCREEN — SUBJECT CARDS
+══════════════════════════════════════════════ -->
+<div id="home-screen">
+
+  <!-- Welcome banner -->
+  <div class="home-hero">
+    <div class="home-hero-inner">
+      <div class="home-greeting" id="home-greeting">Good morning! 👋</div>
+      <h1 class="home-title">What would you like to learn today?</h1>
+      <p class="home-sub">Choose a subject below to get started</p>
+    </div>
+  </div>
+
+  <!-- Subject cards grid -->
+  <div class="subjects-grid">
+
+    <!-- 📖 Lesson Viewer -->
+    <div class="subject-card" onclick="openSubject('lesson')" style="--card-color:#4f6ef7;--card-bg:linear-gradient(135deg,#eef2ff,#e8ecff)">
+      <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#4f6ef7,#8b5cf6)">📖</div>
+      <div class="sc-content">
+        <div class="sc-title">Lesson Viewer</div>
+        <div class="sc-desc">Upload lesson images or PDFs, click any word to explain, translate or look up in dictionary</div>
+        <div class="sc-tags">
+          <span class="sc-tag">Images</span>
+          <span class="sc-tag">PDF</span>
+          <span class="sc-tag">AI Explain</span>
+          <span class="sc-tag">Dictionary</span>
+        </div>
+      </div>
+      <div class="sc-arrow">→</div>
+    </div>
+
+    <!-- ➗ Mathematics -->
+    <div class="subject-card" onclick="openSubject('math')" style="--card-color:#f59e0b;--card-bg:linear-gradient(135deg,#fffbeb,#fef3c7)">
+      <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">➗</div>
+      <div class="sc-content">
+        <div class="sc-title">Mathematics</div>
+        <div class="sc-desc">Calculator, geometry tools, unit converter, times tables practice and step-by-step problem solving</div>
+        <div class="sc-tags">
+          <span class="sc-tag">Calculator</span>
+          <span class="sc-tag">Geometry</span>
+          <span class="sc-tag">Times Tables</span>
+          <span class="sc-tag">Converter</span>
+        </div>
+      </div>
+      <div class="sc-arrow">→</div>
+    </div>
+
+    <!-- 🔬 Science -->
+    <div class="subject-card" onclick="openSubject('science')" style="--card-color:#10b981;--card-bg:linear-gradient(135deg,#ecfdf5,#d1fae5)">
+      <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#10b981,#06b6d4)">🔬</div>
+      <div class="sc-content">
+        <div class="sc-title">Science</div>
+        <div class="sc-desc">Periodic table, human body explorer, food chain builder and science concept explainer</div>
+        <div class="sc-tags">
+          <span class="sc-tag">Periodic Table</span>
+          <span class="sc-tag">Human Body</span>
+          <span class="sc-tag">AI Explain</span>
+        </div>
+      </div>
+      <div class="sc-arrow">→</div>
+    </div>
+
+    <!-- 🌍 Languages -->
+    <div class="subject-card" onclick="openSubject('language')" style="--card-color:#8b5cf6;--card-bg:linear-gradient(135deg,#f5f3ff,#ede9fe)">
+      <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#8b5cf6,#ec4899)">🌍</div>
+      <div class="sc-content">
+        <div class="sc-title">Languages</div>
+        <div class="sc-desc">Translate between 12 languages, dictionary lookup, pronunciation practice and word building</div>
+        <div class="sc-tags">
+          <span class="sc-tag">Translate</span>
+          <span class="sc-tag">Dictionary</span>
+          <span class="sc-tag">Pronounce</span>
+        </div>
+      </div>
+      <div class="sc-arrow">→</div>
+    </div>
+
+    <!-- 📒 My Notebook -->
+    <div class="subject-card" onclick="openSubject('notebook')" style="--card-color:#f43f5e;--card-bg:linear-gradient(135deg,#fff1f2,#ffe4e6)">
+      <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#f43f5e,#f97316)">📒</div>
+      <div class="sc-content">
+        <div class="sc-title">My Notebook</div>
+        <div class="sc-desc">All your saved words with definitions, examples and synonyms. Practice flashcards and export your word list</div>
+        <div class="sc-tags">
+          <span class="sc-tag">Saved Words</span>
+          <span class="sc-tag">Flashcards</span>
+          <span class="sc-tag">Export</span>
+        </div>
+      </div>
+      <div class="sc-arrow">→</div>
+    </div>
+
+  </div><!-- end subjects-grid -->
+
+  <!-- Quick stats bar -->
+  <div class="home-stats">
+    <div class="home-stat">
+      <span class="home-stat-n" id="stat-words">0</span>
+      <span class="home-stat-l">words saved</span>
+    </div>
+    <div class="home-stat-sep">·</div>
+    <div class="home-stat">
+      <span class="home-stat-n" id="stat-mastered">0</span>
+      <span class="home-stat-l">mastered ⭐</span>
+    </div>
+    <div class="home-stat-sep">·</div>
+    <div class="home-stat">
+      <span class="home-stat-n" id="stat-cached">0</span>
+      <span class="home-stat-l">words in dictionary cache</span>
+    </div>
+  </div>
+
+</div><!-- end home-screen -->
+
+<!-- ══════════════════════════════════════════════
+     LESSON VIEWER WORKSPACE
+══════════════════════════════════════════════ -->
+<div id="workspace-lesson" class="workspace" style="display:none">
 <div class="app-body">
 
-<!-- ════ LEFT PANEL — LESSON VIEWER ════ -->
+<!-- LEFT PANEL -->
 <div class="panel-left">
-
-  <!-- Panel header -->
   <div class="panel-hdr">
     <div class="dot-indicator" style="background:#4f6ef7;box-shadow:0 0 6px rgba(79,110,247,.5)"></div>
     <span class="panel-hdr-title">📖 Lesson Viewer</span>
@@ -52,18 +165,14 @@
     <button class="action-btn danger" id="btn-clr" style="display:none" onclick="clearAll()">✕ Clear</button>
   </div>
 
-  <!-- Upload zone (shown when empty) -->
   <div class="upload-area" id="upload-area">
-    <!-- Two upload options side by side -->
     <div style="display:flex;gap:14px;width:100%;max-width:600px;">
-      <!-- Image upload -->
       <div class="drop-zone" id="drop-zone" style="flex:1;min-width:0;">
         <div class="dz-icon">🖼️</div>
         <div class="dz-title">Images</div>
         <div class="dz-sub">JPG · PNG · WEBP<br>Multiple files OK</div>
         <input type="file" id="file-input" accept="image/*" multiple onchange="handleFiles(this.files)">
       </div>
-      <!-- PDF upload -->
       <div class="drop-zone" id="pdf-drop-zone" style="flex:1;min-width:0;border-color:#c7d2fe;background:linear-gradient(135deg,#eef2ff,#f5f3ff);">
         <div class="dz-icon" style="background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(79,110,247,.1));border-color:rgba(139,92,246,.25);">📄</div>
         <div class="dz-title">PDF File</div>
@@ -71,38 +180,30 @@
         <input type="file" id="pdf-input" accept=".pdf,application/pdf" onchange="handlePDF(this.files[0])">
       </div>
     </div>
-    <!-- PDF progress bar (hidden by default) -->
     <div id="pdf-progress" style="display:none;width:100%;max-width:600px;flex-direction:column;gap:8px;">
-      <div style="font-size:13px;font-weight:700;color:var(--text-m)" id="pdf-progress-label">Converting PDF… page 1 of 1</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text-m)" id="pdf-progress-label">Converting PDF…</div>
       <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
         <div id="pdf-progress-fill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:4px;transition:width .3s;"></div>
       </div>
     </div>
     <div class="paste-hint">
       <span class="paste-icon">⌨️</span>
-      <span>Or press <span class="kbd">Ctrl</span>+<span class="kbd">V</span> to paste a screenshot directly!</span>
+      <span>Or press <span class="kbd">Ctrl</span>+<span class="kbd">V</span> to paste a screenshot!</span>
     </div>
-    <p class="privacy-note">🔒 All files stay in your browser — nothing is uploaded to any server</p>
+    <p class="privacy-note">🔒 All files stay in your browser — nothing uploaded to any server</p>
   </div>
 
-  <!-- Thumbnail strip -->
   <div class="thumb-bar" id="thumb-bar"></div>
 
-  <!-- Interactive canvas viewer — click or drag to select words -->
   <div class="viewer" id="viewer">
     <div class="viewer-inner" style="position:relative;width:100%">
-      <!-- Hidden img used as source only -->
       <img id="cur-img" alt="Lesson page" style="display:none">
-      <!-- Canvas shows image + word highlights -->
       <canvas id="lesson-canvas"></canvas>
-      <!-- Drag selection overlay -->
       <div id="sel-box" style="position:absolute;border:2.5px solid var(--blue);background:rgba(79,110,247,.12);border-radius:4px;pointer-events:none;display:none;"></div>
     </div>
   </div>
 
-  <!-- Combined bottom bar: TTS + status + selected word + manual input -->
   <div class="status-bar" id="status-bar" style="flex-direction:column;padding:0;gap:0;">
-    <!-- Row 1: TTS + status text + page label -->
     <div style="display:flex;align-items:center;gap:10px;padding:7px 14px;width:100%;">
       <button class="tts-circle" id="tts-btn" onclick="toggleTTS()" title="Read lesson aloud">▶</button>
       <span class="status-text" id="status-text">Click "🔍 Map Words" — then click or drag on the image</span>
@@ -113,87 +214,57 @@
         <button class="spd-btn" id="spd-fast" onclick="setSpeed(1.1)" title="Fast">🐇</button>
       </div>
       <select class="tts-speed" id="tts-speed" style="display:none">
-        <option value="0.7">Slow</option>
-        <option value="0.85" selected>Normal</option>
-        <option value="1.1">Fast</option>
+        <option value="0.7">Slow</option><option value="0.85" selected>Normal</option><option value="1.1">Fast</option>
       </select>
       <span class="pg-lbl" id="pg-lbl">Page 1</span>
     </div>
-    <!-- Row 2: Selected word display (hidden until word selected) -->
     <div id="sel-text-row" style="display:none;align-items:center;gap:10px;padding:6px 14px;border-top:1px solid var(--border);background:var(--blue-l);width:100%;">
       <span style="font-size:12px;font-weight:700;color:var(--blue-d);white-space:nowrap;">Selected:</span>
       <span id="sel-text-display" style="font-size:14px;font-weight:800;color:var(--text-h);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
       <button class="action-btn primary" style="height:28px;padding:0 10px;font-size:11px;flex-shrink:0" onclick="useSelectedText()">Use this ✦</button>
       <button class="action-btn danger" style="height:28px;padding:0 8px;font-size:11px;flex-shrink:0" onclick="clearSelection()">✕</button>
     </div>
-    <!-- Row 3: Manual input -->
     <div id="word-area" class="manual-row" style="border-top:1px solid var(--border);">
       <input class="manual-inp" id="manual-inp" type="text" placeholder="Or type any word here and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim();if(v){clickWord(v);this.value=''}}">
       <button class="manual-go" onclick="var v=document.getElementById('manual-inp').value.trim();if(v){clickWord(v);document.getElementById('manual-inp').value=''}">Go →</button>
     </div>
   </div>
-
 </div><!-- end panel-left -->
 
-<!-- ════ RIGHT PANEL — AI EXPLANATION ════ -->
+<!-- RIGHT PANEL -->
 <div class="panel-right">
-
-  <!-- Tab navigation -->
   <nav class="tab-nav">
-    <div class="tnav-tab active" id="tab-search"    onclick="switchTab('search')" title="Search">   <span class="t-icon">🔍</span><span class="t-label">Search</span></div>
-    <div class="tnav-tab"       id="tab-explain"   onclick="switchTab('explain')" title="Explain">  <span class="t-icon">🧠</span><span class="t-label">Explain</span></div>
+    <div class="tnav-tab active" id="tab-search"    onclick="switchTab('search')"    title="Search">   <span class="t-icon">🔍</span><span class="t-label">Search</span></div>
+    <div class="tnav-tab"       id="tab-explain"   onclick="switchTab('explain')"   title="Explain">  <span class="t-icon">🧠</span><span class="t-label">Explain</span></div>
     <div class="tnav-tab"       id="tab-translate" onclick="switchTab('translate')" title="Translate"><span class="t-icon">🌍</span><span class="t-label">Translate</span></div>
-    <div class="tnav-tab"       id="tab-dict"      onclick="switchTab('dict')" title="Dictionary"><span class="t-icon">📚</span><span class="t-label">Dictionary</span></div>
-    <div class="tnav-tab"       id="tab-notebook"  onclick="switchTab('notebook')" title="My Word Notebook" style="border-right:none"><span class="t-icon">📒</span><span class="t-label">Notebook</span></div>
+    <div class="tnav-tab"       id="tab-dict"      onclick="switchTab('dict')"      title="Dictionary"><span class="t-icon">📚</span><span class="t-label">Dictionary</span></div>
+    <div class="tnav-tab"       id="tab-notebook"  onclick="switchTab('notebook')"  title="My Word Notebook" style="border-right:none"><span class="t-icon">📒</span><span class="t-label">Notebook</span></div>
   </nav>
-
-  <!-- Query bar (hidden on notebook tab) -->
   <div class="query-bar" id="query-bar">
-    <input class="q-field" id="q-field" type="text" placeholder="Type a word or phrase, or click a word from the lesson…" onkeydown="if(event.key==='Enter')goQuery()">
+    <input class="q-field" id="q-field" type="text" placeholder="Type a word or phrase…" onkeydown="if(event.key==='Enter')goQuery()">
     <button class="ask-btn" id="ask-btn" onclick="goQuery()">Ask AI ✦</button>
   </div>
-
-  <!-- Content area -->
   <div class="r-area" id="r-area">
-
-    <!-- Empty state -->
     <div class="empty-state" id="empty-s" style="display:flex">
       <div class="empty-icon">✨</div>
       <div class="empty-title">Ready to explore!</div>
       <div class="empty-sub">Upload a lesson image, then click any word to get started.</div>
       <div class="empty-steps">
         <div class="empty-step"><div class="step-num">1</div> Upload or paste a lesson image on the left</div>
-        <div class="empty-step"><div class="step-num">2</div> Click "🔍 Read Image" to extract the text</div>
-        <div class="empty-step"><div class="step-num">3</div> Click any word → choose Explain, Translate or Dictionary</div>
+        <div class="empty-step"><div class="step-num">2</div> Click "🔍 Map Words" to make text interactive</div>
+        <div class="empty-step"><div class="step-num">3</div> Click any word → Explain, Translate or Dictionary</div>
       </div>
     </div>
-
-    <!-- Loading -->
-    <div class="loading-state" id="load-s">
-      <div class="loader"></div>
-      <div class="loader-msg" id="load-msg">Asking Gemini…</div>
-      <div class="loader-sub" id="load-sub">Making it child-friendly</div>
-    </div>
-
-    <!-- Result -->
+    <div class="loading-state" id="load-s"><div class="loader"></div><div class="loader-msg" id="load-msg">Asking Gemini…</div><div class="loader-sub" id="load-sub">Making it child-friendly</div></div>
     <div class="result-state" id="result-s">
-      <div class="result-hdr">
-        <div class="result-type-tag" id="result-tag">✨ Explanation</div>
-        <div class="result-word-title" id="result-word"></div>
-      </div>
+      <div class="result-hdr"><div class="result-type-tag" id="result-tag">✨ Explanation</div><div class="result-word-title" id="result-word"></div></div>
       <div class="result-scroll" id="result-scroll"></div>
     </div>
-
-    <!-- Translate tab — Google powered, no API key needed -->
     <div id="translate-area" style="display:none;flex:1;flex-direction:column;overflow-y:auto;">
       <div style="padding:18px 20px;">
-        <div style="display:inline-flex;align-items:center;gap:6px;background:#e8f0fe;color:#1a73e8;border:1.5px solid #c5d8fb;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px;">
-          🌍 Google Translate — Free, no API key needed
-        </div>
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#e8f0fe;color:#1a73e8;border:1.5px solid #c5d8fb;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px;">🌍 Google Translate — Free</div>
         <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);margin-bottom:6px;">Selected / Typed Text</div>
-        <div id="tr-original" style="font-size:17px;font-weight:700;color:var(--text-h);background:var(--bg-page);border:2px solid var(--border);border-radius:var(--r-md);padding:14px 16px;margin-bottom:16px;line-height:1.55;min-height:52px;">
-          Type or select text to translate
-        </div>
+        <div id="tr-original" style="font-size:17px;font-weight:700;color:var(--text-h);background:var(--bg-page);border:2px solid var(--border);border-radius:var(--r-md);padding:14px 16px;margin-bottom:16px;line-height:1.55;min-height:52px;">Type or select text to translate</div>
         <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);margin-bottom:8px;">Translate to</div>
         <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;">
           <button class="tr-lang-btn active" data-lang="ta" onclick="setTranslateLang(this)">Tamil</button>
@@ -209,25 +280,18 @@
           <button class="tr-lang-btn" data-lang="zh-CN" onclick="setTranslateLang(this)">Chinese</button>
           <button class="tr-lang-btn" data-lang="ar" onclick="setTranslateLang(this)">Arabic</button>
         </div>
-        <a id="tr-open-btn" href="#" target="_blank"
-          style="display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;background:linear-gradient(135deg,#4285f4,#1a73e8);color:white;border-radius:var(--r-md);text-decoration:none;font-size:15px;font-weight:800;box-shadow:0 4px 16px rgba(66,133,244,.35);transition:all .18s;margin-bottom:12px;"
-          onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(66,133,244,.45)'"
-          onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(66,133,244,.35)'">
-          🌐 Open in Google Translate
-        </a>
-        <a id="tr-deepl-btn" href="https://www.deepl.com/translator" target="_blank"
-          style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;background:var(--white);color:var(--text-m);border:2px solid var(--border);border-radius:var(--r-md);text-decoration:none;font-size:13px;font-weight:700;transition:all .18s;margin-bottom:12px;"
-          onmouseover="this.style.borderColor='#0f2b46';this.style.color='#0f2b46'"
-          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-m)'">
-          🔤 Also try DeepL — often more accurate
-        </a>
-        <div style="font-size:11px;font-weight:600;color:var(--text-l);text-align:center;">
-          Both links open free in a new tab — no API key needed
-        </div>
+        <a id="tr-open-btn" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;background:linear-gradient(135deg,#4285f4,#1a73e8);color:white;border-radius:var(--r-md);text-decoration:none;font-size:15px;font-weight:800;box-shadow:0 4px 16px rgba(66,133,244,.35);transition:all .18s;margin-bottom:12px;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">🌐 Open in Google Translate</a>
+        <a id="tr-deepl-btn" href="https://www.deepl.com/translator" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;background:var(--white);color:var(--text-m);border:2px solid var(--border);border-radius:var(--r-md);text-decoration:none;font-size:13px;font-weight:700;transition:all .18s;margin-bottom:12px;">🔤 Also try DeepL</a>
+        <div style="font-size:11px;font-weight:600;color:var(--text-l);text-align:center;">Both links open free in a new tab</div>
       </div>
     </div>
-
-    <!-- Search tab -->
+    <div id="dict-area" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+      <div style="padding:10px 18px 0;border-bottom:1.5px solid var(--border);background:var(--white);flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);">📚 Dictionary</span><span style="flex:1"></span><span style="font-size:11px;font-weight:600;color:var(--text-l);">Free · 1 Lakh+ words</span></div>
+      </div>
+      <div id="dict-loading" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:14px;"><div class="loader"></div><div style="font-size:14px;font-weight:700;color:var(--text-m)">Looking up dictionary…</div></div>
+      <div id="dict-results" style="flex:1;overflow-y:auto;padding:16px 18px;scrollbar-width:thin;"></div>
+    </div>
     <div id="search-area" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
       <div class="search-area">
         <div class="search-for-label">Searching for</div>
@@ -238,30 +302,9 @@
           <a class="search-card k" id="sl-k" href="#" target="_blank"><div class="sc-em">🎓</div><div class="sc-title">Khan Academy</div><div class="sc-desc">Free lessons</div></a>
           <a class="search-card y" id="sl-y" href="#" target="_blank"><div class="sc-em">▶️</div><div class="sc-title">YouTube</div><div class="sc-desc">Kids videos</div></a>
         </div>
-        <div class="search-free-note">🔓 All links open free in a new tab — no API key needed</div>
+        <div class="search-free-note">🔓 All links open free in a new tab</div>
       </div>
     </div>
-
-    <!-- Dictionary tab — Free Dictionary API, no key needed -->
-    <div id="dict-area" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
-      <!-- Dict header with word display -->
-      <div style="padding:10px 18px 0;border-bottom:1.5px solid var(--border);background:var(--white);flex-shrink:0;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);">📚 Oxford Dictionary</span>
-          <span style="flex:1"></span>
-          <span style="font-size:11px;font-weight:600;color:var(--text-l);">Free · No API key</span>
-        </div>
-      </div>
-      <!-- Loading state -->
-      <div id="dict-loading" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:14px;">
-        <div class="loader"></div>
-        <div style="font-size:14px;font-weight:700;color:var(--text-m)">Looking up dictionary…</div>
-      </div>
-      <!-- Results -->
-      <div id="dict-results" style="flex:1;overflow-y:auto;padding:16px 18px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;"></div>
-    </div>
-
-    <!-- Notebook tab -->
     <div id="notebook-area" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
       <div class="notebook-area">
         <div class="nb-topbar">
@@ -282,61 +325,359 @@
         <div class="nb-empty" id="nb-empty">
           <div style="font-size:48px">📒</div>
           <div style="font-size:17px;font-weight:900;color:var(--text-h)">Your Word Notebook is empty</div>
-          <div style="font-size:14px;font-weight:600;color:var(--text-m);max-width:260px;line-height:1.65;text-align:center">
-            Click any word in the lesson → select <strong style="color:var(--blue)">"Save to Notebook"</strong> to build your personal dictionary
-          </div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-m);max-width:260px;line-height:1.65;text-align:center">Click any word in the lesson → <strong style="color:var(--blue)">"Save to Notebook"</strong></div>
         </div>
         <div class="practice-mode" id="practice-mode">
-          <div class="pr-progress">
-            <div class="pr-bar-track"><div class="pr-bar-fill" id="pr-fill"></div></div>
-            <span class="pr-lbl" id="pr-lbl">1 / 1</span>
-          </div>
+          <div class="pr-progress"><div class="pr-bar-track"><div class="pr-bar-fill" id="pr-fill"></div></div><span class="pr-lbl" id="pr-lbl">1/1</span></div>
           <div class="pr-word" id="pr-word"></div>
           <div class="pr-hint">What does this word mean?</div>
-          <div id="pr-reveal-wrap">
-            <button class="pr-reveal-btn" onclick="revealPractice()">👁 Show Answer</button>
-          </div>
+          <div id="pr-reveal-wrap"><button class="pr-reveal-btn" onclick="revealPractice()">👁 Show Answer</button></div>
           <div class="pr-answer" id="pr-answer" style="display:none">
             <div class="pr-meaning-card" id="pr-meaning"></div>
             <div class="pr-example-text" id="pr-example"></div>
-            <div class="pr-choice">
-              <button class="pr-still" onclick="practiceMark(false)">❌ Still learning</button>
-              <button class="pr-got"   onclick="practiceMark(true)">⭐ Got it!</button>
-            </div>
+            <div class="pr-choice"><button class="pr-still" onclick="practiceMark(false)">❌ Still learning</button><button class="pr-got" onclick="practiceMark(true)">⭐ Got it!</button></div>
           </div>
           <button class="action-btn" onclick="endPractice()" style="margin-top:18px">✕ Exit Practice</button>
         </div>
       </div>
     </div>
-
-  </div><!-- end r-area -->
+  </div>
 </div><!-- end panel-right -->
 </div><!-- end app-body -->
+</div><!-- end workspace-lesson -->
 
-<!-- IMAGE CONTEXT MENU -->
-<div class="float-menu" id="img-ctx">
-  <div class="fm-hdr">Image Options</div>
-  <div class="fm-item" onclick="imgCtx('read')">     <div class="fm-ic" style="background:var(--blue-l)">🔍</div> Read text from image (OCR)</div>
-  <div class="fm-item" onclick="imgCtx('explain')">  <div class="fm-ic" style="background:var(--purple-l)">🧠</div> Explain this image with AI</div>
-  <div class="fm-item" onclick="imgCtx('pdf')">      <div class="fm-ic" style="background:var(--green-l)">📄</div> Save page as PDF</div>
+<!-- ══════════════════════════════════════════════
+     MATHEMATICS WORKSPACE
+══════════════════════════════════════════════ -->
+<div id="workspace-math" class="workspace" style="display:none">
+  <div class="subject-workspace">
+    <div class="sw-sidebar">
+      <div class="sw-nav-title">➗ Mathematics</div>
+      <button class="sw-nav-btn active" id="math-nav-calc"     onclick="mathTab('calc')">🧮 Calculator</button>
+      <button class="sw-nav-btn"        id="math-nav-tables"   onclick="mathTab('tables')">✖️ Times Tables</button>
+      <button class="sw-nav-btn"        id="math-nav-geometry" onclick="mathTab('geometry')">📐 Geometry</button>
+      <button class="sw-nav-btn"        id="math-nav-convert"  onclick="mathTab('convert')">🔄 Unit Converter</button>
+      <button class="sw-nav-btn"        id="math-nav-solve"    onclick="mathTab('solve')">🤖 AI Solver</button>
+    </div>
+    <div class="sw-content" id="math-content">
+      <!-- Calculator -->
+      <div id="math-calc" class="math-panel">
+        <h2 class="math-title">🧮 Calculator</h2>
+        <div class="calc-display" id="calc-display">0</div>
+        <div class="calc-grid">
+          <button class="calc-btn wide danger" onclick="calcAction('clear')">AC</button>
+          <button class="calc-btn danger"      onclick="calcAction('sign')">±</button>
+          <button class="calc-btn op"          onclick="calcAction('%')">%</button>
+          <button class="calc-btn op"          onclick="calcAction('/')">÷</button>
+          <button class="calc-btn"  onclick="calcAction('7')">7</button>
+          <button class="calc-btn"  onclick="calcAction('8')">8</button>
+          <button class="calc-btn"  onclick="calcAction('9')">9</button>
+          <button class="calc-btn op" onclick="calcAction('*')">×</button>
+          <button class="calc-btn"  onclick="calcAction('4')">4</button>
+          <button class="calc-btn"  onclick="calcAction('5')">5</button>
+          <button class="calc-btn"  onclick="calcAction('6')">6</button>
+          <button class="calc-btn op" onclick="calcAction('-')">−</button>
+          <button class="calc-btn"  onclick="calcAction('1')">1</button>
+          <button class="calc-btn"  onclick="calcAction('2')">2</button>
+          <button class="calc-btn"  onclick="calcAction('3')">3</button>
+          <button class="calc-btn op" onclick="calcAction('+')">+</button>
+          <button class="calc-btn wide" onclick="calcAction('0')">0</button>
+          <button class="calc-btn"  onclick="calcAction('.')">.</button>
+          <button class="calc-btn eq" onclick="calcAction('=')">=</button>
+        </div>
+        <div class="calc-history" id="calc-history"></div>
+      </div>
+
+      <!-- Times Tables -->
+      <div id="math-tables" class="math-panel" style="display:none">
+        <h2 class="math-title">✖️ Times Tables Practice</h2>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap;">
+          <label style="font-size:14px;font-weight:700;color:var(--text-m)">Choose table:</label>
+          <div id="table-btns" style="display:flex;gap:6px;flex-wrap:wrap;">
+          </div>
+        </div>
+        <div id="times-table-grid" class="times-grid"></div>
+        <div style="margin-top:20px;padding:16px;background:var(--blue-l);border-radius:var(--r-md);border:2px solid #c7d2fe;">
+          <div style="font-size:13px;font-weight:800;color:var(--blue-d);margin-bottom:12px;">🎯 Quick Quiz — test yourself!</div>
+          <div id="tt-quiz-q" style="font-size:22px;font-weight:900;color:var(--text-h);margin-bottom:10px;"></div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="tt-answer" type="number" style="font-size:18px;font-weight:700;padding:8px 14px;border:2.5px solid var(--border);border-radius:var(--r-sm);width:100px;outline:none;" placeholder="?" onkeydown="if(event.key==='Enter')checkTTAnswer()">
+            <button class="action-btn primary" onclick="checkTTAnswer()">Check ✓</button>
+            <button class="action-btn" onclick="nextTTQuestion()">Skip →</button>
+          </div>
+          <div id="tt-feedback" style="font-size:15px;font-weight:700;margin-top:10px;min-height:24px;"></div>
+          <div style="font-size:12px;font-weight:600;color:var(--text-m);margin-top:6px;">Score: <span id="tt-score">0</span> correct out of <span id="tt-total">0</span></div>
+        </div>
+      </div>
+
+      <!-- Geometry -->
+      <div id="math-geometry" class="math-panel" style="display:none">
+        <h2 class="math-title">📐 Geometry Calculator</h2>
+        <div class="geo-grid">
+          <div class="geo-card">
+            <div class="geo-icon">▭</div>
+            <div class="geo-name">Rectangle</div>
+            <label>Length <input class="geo-inp" id="rect-l" type="number" placeholder="e.g. 5"></label>
+            <label>Width  <input class="geo-inp" id="rect-w" type="number" placeholder="e.g. 3"></label>
+            <button class="action-btn primary" onclick="calcGeo('rect')">Calculate</button>
+            <div class="geo-result" id="rect-result"></div>
+          </div>
+          <div class="geo-card">
+            <div class="geo-icon">△</div>
+            <div class="geo-name">Triangle</div>
+            <label>Base   <input class="geo-inp" id="tri-b" type="number" placeholder="e.g. 6"></label>
+            <label>Height <input class="geo-inp" id="tri-h" type="number" placeholder="e.g. 4"></label>
+            <label>Side A <input class="geo-inp" id="tri-a" type="number" placeholder="e.g. 5"></label>
+            <label>Side B <input class="geo-inp" id="tri-c" type="number" placeholder="e.g. 7"></label>
+            <button class="action-btn primary" onclick="calcGeo('tri')">Calculate</button>
+            <div class="geo-result" id="tri-result"></div>
+          </div>
+          <div class="geo-card">
+            <div class="geo-icon">○</div>
+            <div class="geo-name">Circle</div>
+            <label>Radius <input class="geo-inp" id="cir-r" type="number" placeholder="e.g. 7"></label>
+            <button class="action-btn primary" onclick="calcGeo('circle')">Calculate</button>
+            <div class="geo-result" id="circle-result"></div>
+          </div>
+          <div class="geo-card">
+            <div class="geo-icon">▱</div>
+            <div class="geo-name">Parallelogram</div>
+            <label>Base   <input class="geo-inp" id="par-b" type="number" placeholder="e.g. 8"></label>
+            <label>Height <input class="geo-inp" id="par-h" type="number" placeholder="e.g. 5"></label>
+            <label>Side   <input class="geo-inp" id="par-s" type="number" placeholder="e.g. 6"></label>
+            <button class="action-btn primary" onclick="calcGeo('para')">Calculate</button>
+            <div class="geo-result" id="para-result"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unit Converter -->
+      <div id="math-convert" class="math-panel" style="display:none">
+        <h2 class="math-title">🔄 Unit Converter</h2>
+        <div class="conv-tabs" id="conv-tabs">
+          <button class="conv-tab active" onclick="setConvType(this,'length')">📏 Length</button>
+          <button class="conv-tab" onclick="setConvType(this,'weight')">⚖️ Weight</button>
+          <button class="conv-tab" onclick="setConvType(this,'temp')">🌡️ Temperature</button>
+          <button class="conv-tab" onclick="setConvType(this,'area')">▭ Area</button>
+          <button class="conv-tab" onclick="setConvType(this,'volume')">💧 Volume</button>
+          <button class="conv-tab" onclick="setConvType(this,'time')">⏰ Time</button>
+        </div>
+        <div class="conv-body">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;">
+            <input id="conv-input" type="number" class="conv-inp" placeholder="Enter value" oninput="doConvert()">
+            <select id="conv-from" class="conv-sel" onchange="doConvert()"></select>
+            <span style="font-size:20px;font-weight:800;color:var(--text-m)">→</span>
+            <select id="conv-to" class="conv-sel" onchange="doConvert()"></select>
+          </div>
+          <div id="conv-result" class="conv-result"></div>
+          <div id="conv-all" class="conv-all-table"></div>
+        </div>
+      </div>
+
+      <!-- AI Solver -->
+      <div id="math-solve" class="math-panel" style="display:none">
+        <h2 class="math-title">🤖 AI Math Solver</h2>
+        <div style="font-size:14px;font-weight:600;color:var(--text-m);margin-bottom:12px;">Type any math problem and get a step-by-step solution!</div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <input id="math-problem" type="text" class="q-field" style="flex:1;min-width:200px;" placeholder="e.g. What is 15% of 240? or Solve 3x + 5 = 20">
+          <button class="ask-btn" onclick="solveMath()">Solve ✦</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-l);width:100%;margin-bottom:4px;">TRY THESE EXAMPLES:</span>
+          <button class="example-btn" onclick="tryExample(this)">What is 25% of 80?</button>
+          <button class="example-btn" onclick="tryExample(this)">Solve 2x + 6 = 14</button>
+          <button class="example-btn" onclick="tryExample(this)">Area of circle radius 5</button>
+          <button class="example-btn" onclick="tryExample(this)">Simplify 18/24</button>
+          <button class="example-btn" onclick="tryExample(this)">Convert 5km to meters</button>
+          <button class="example-btn" onclick="tryExample(this)">LCM of 12 and 18</button>
+        </div>
+        <div id="math-solve-result" style="display:none;">
+          <div class="math-solution-card" id="math-solution-body"></div>
+        </div>
+        <div id="math-solve-loading" style="display:none;text-align:center;padding:24px;">
+          <div class="loader" style="margin:0 auto 12px;"></div>
+          <div style="font-size:14px;font-weight:700;color:var(--text-m)">Solving step by step…</div>
+        </div>
+      </div>
+
+    </div><!-- end sw-content -->
+  </div><!-- end subject-workspace -->
+</div><!-- end workspace-math -->
+
+<!-- ══════════════════════════════════════════════
+     SCIENCE WORKSPACE  
+══════════════════════════════════════════════ -->
+<div id="workspace-science" class="workspace" style="display:none">
+  <div class="subject-workspace">
+    <div class="sw-sidebar">
+      <div class="sw-nav-title">🔬 Science</div>
+      <button class="sw-nav-btn active" id="sci-nav-periodic" onclick="sciTab('periodic')">⚗️ Periodic Table</button>
+      <button class="sw-nav-btn"        id="sci-nav-body"     onclick="sciTab('body')">🫀 Human Body</button>
+      <button class="sw-nav-btn"        id="sci-nav-explain"  onclick="sciTab('explain')">🤖 AI Explainer</button>
+    </div>
+    <div class="sw-content" id="sci-content">
+      <div id="sci-periodic" class="math-panel">
+        <h2 class="math-title">⚗️ Periodic Table — Click an element to learn about it</h2>
+        <div id="periodic-table-container" style="overflow-x:auto;padding:8px 0;"></div>
+        <div id="element-detail" style="display:none;margin-top:16px;background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);padding:18px;"></div>
+      </div>
+      <div id="sci-body" class="math-panel" style="display:none">
+        <h2 class="math-title">🫀 Human Body Systems</h2>
+        <div class="body-grid">
+          <div class="body-card" onclick="explainBodySystem('Circulatory system - heart, blood vessels, blood')">❤️<div>Circulatory</div></div>
+          <div class="body-card" onclick="explainBodySystem('Digestive system - stomach, intestines, digestion')">🫃<div>Digestive</div></div>
+          <div class="body-card" onclick="explainBodySystem('Respiratory system - lungs, breathing, oxygen')">🫁<div>Respiratory</div></div>
+          <div class="body-card" onclick="explainBodySystem('Skeletal system - bones, skeleton, joints')">🦴<div>Skeletal</div></div>
+          <div class="body-card" onclick="explainBodySystem('Nervous system - brain, nerves, reflexes')">🧠<div>Nervous</div></div>
+          <div class="body-card" onclick="explainBodySystem('Muscular system - muscles, movement, strength')">💪<div>Muscular</div></div>
+          <div class="body-card" onclick="explainBodySystem('Endocrine system - hormones, glands, growth')">⚗️<div>Endocrine</div></div>
+          <div class="body-card" onclick="explainBodySystem('Immune system - white blood cells, fighting infection')">🛡️<div>Immune</div></div>
+        </div>
+        <div id="body-result" style="display:none;margin-top:16px;background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);padding:18px;"></div>
+      </div>
+      <div id="sci-explain" class="math-panel" style="display:none">
+        <h2 class="math-title">🤖 Science Concept Explainer</h2>
+        <div style="font-size:14px;font-weight:600;color:var(--text-m);margin-bottom:12px;">Ask any science question and get a child-friendly explanation!</div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <input id="sci-question" type="text" class="q-field" style="flex:1;min-width:200px;" placeholder="e.g. How does photosynthesis work?">
+          <button class="ask-btn" onclick="askScience()">Ask AI ✦</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-l);width:100%;margin-bottom:4px;">POPULAR TOPICS:</span>
+          <button class="example-btn" onclick="askSciExample(this)">How does gravity work?</button>
+          <button class="example-btn" onclick="askSciExample(this)">What is photosynthesis?</button>
+          <button class="example-btn" onclick="askSciExample(this)">Why is the sky blue?</button>
+          <button class="example-btn" onclick="askSciExample(this)">How do volcanoes erupt?</button>
+          <button class="example-btn" onclick="askSciExample(this)">What is DNA?</button>
+          <button class="example-btn" onclick="askSciExample(this)">How does the heart work?</button>
+        </div>
+        <div id="sci-result" style="display:none;"><div class="math-solution-card" id="sci-answer-body"></div></div>
+        <div id="sci-loading" style="display:none;text-align:center;padding:24px;"><div class="loader" style="margin:0 auto 12px;"></div><div style="font-size:14px;font-weight:700;color:var(--text-m)">Asking Gemini…</div></div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- TEXT SELECTION POPUP -->
+<!-- ══════════════════════════════════════════════
+     LANGUAGES WORKSPACE
+══════════════════════════════════════════════ -->
+<div id="workspace-language" class="workspace" style="display:none">
+  <div class="subject-workspace">
+    <div class="sw-sidebar">
+      <div class="sw-nav-title">🌍 Languages</div>
+      <button class="sw-nav-btn active" id="lang-nav-trans"   onclick="langTab('trans')">🔄 Translate</button>
+      <button class="sw-nav-btn"        id="lang-nav-dict"    onclick="langTab('dict')">📚 Dictionary</button>
+      <button class="sw-nav-btn"        id="lang-nav-pronoun" onclick="langTab('pronoun')">🔊 Pronunciation</button>
+    </div>
+    <div class="sw-content" id="lang-content">
+      <div id="lang-trans" class="math-panel">
+        <h2 class="math-title">🔄 Translate Text</h2>
+        <textarea id="lang-trans-input" style="width:100%;min-height:100px;border:2px solid var(--border);border-radius:var(--r-md);padding:14px;font-family:var(--font);font-size:15px;outline:none;resize:vertical;margin-bottom:12px;" placeholder="Type or paste text to translate here…" oninput="langUpdateLinks()"></textarea>
+        <div style="font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);margin-bottom:8px;">Translate to</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;" id="lang-lang-btns">
+          <button class="tr-lang-btn active" data-lang="ta" onclick="langSetLang(this)">Tamil</button>
+          <button class="tr-lang-btn" data-lang="hi" onclick="langSetLang(this)">Hindi</button>
+          <button class="tr-lang-btn" data-lang="en" onclick="langSetLang(this)">English</button>
+          <button class="tr-lang-btn" data-lang="te" onclick="langSetLang(this)">Telugu</button>
+          <button class="tr-lang-btn" data-lang="kn" onclick="langSetLang(this)">Kannada</button>
+          <button class="tr-lang-btn" data-lang="ml" onclick="langSetLang(this)">Malayalam</button>
+          <button class="tr-lang-btn" data-lang="fr" onclick="langSetLang(this)">French</button>
+          <button class="tr-lang-btn" data-lang="de" onclick="langSetLang(this)">German</button>
+          <button class="tr-lang-btn" data-lang="es" onclick="langSetLang(this)">Spanish</button>
+          <button class="tr-lang-btn" data-lang="ja" onclick="langSetLang(this)">Japanese</button>
+          <button class="tr-lang-btn" data-lang="zh-CN" onclick="langSetLang(this)">Chinese</button>
+          <button class="tr-lang-btn" data-lang="ar" onclick="langSetLang(this)">Arabic</button>
+        </div>
+        <a id="lang-gt-btn" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;background:linear-gradient(135deg,#4285f4,#1a73e8);color:white;border-radius:var(--r-md);text-decoration:none;font-size:15px;font-weight:800;box-shadow:0 4px 16px rgba(66,133,244,.35);margin-bottom:10px;">🌐 Open in Google Translate</a>
+        <a id="lang-deepl-btn" href="https://www.deepl.com/translator" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;background:var(--white);color:var(--text-m);border:2px solid var(--border);border-radius:var(--r-md);text-decoration:none;font-size:13px;font-weight:700;">🔤 Also try DeepL</a>
+      </div>
+      <div id="lang-dict" class="math-panel" style="display:none">
+        <h2 class="math-title">📚 Dictionary Lookup</h2>
+        <div style="display:flex;gap:10px;margin-bottom:16px;">
+          <input id="lang-dict-input" type="text" class="q-field" placeholder="Type any English word…" onkeydown="if(event.key==='Enter')langLookup()">
+          <button class="ask-btn" onclick="langLookup()">Look up</button>
+        </div>
+        <div id="lang-dict-loading" style="display:none;text-align:center;padding:24px;"><div class="loader" style="margin:0 auto;"></div></div>
+        <div id="lang-dict-result" style="overflow-y:auto;max-height:calc(100vh - 300px);"></div>
+      </div>
+      <div id="lang-pronoun" class="math-panel" style="display:none">
+        <h2 class="math-title">🔊 Pronunciation Practice</h2>
+        <div style="font-size:14px;font-weight:600;color:var(--text-m);margin-bottom:16px;">Type a word to hear how it is pronounced</div>
+        <div style="display:flex;gap:10px;margin-bottom:16px;">
+          <input id="pronoun-input" type="text" class="q-field" placeholder="e.g. photosynthesis">
+          <button class="ask-btn" onclick="speakPronoun()">🔊 Speak</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;">
+          <label style="font-size:13px;font-weight:700;color:var(--text-m)">Speed:</label>
+          <input type="range" id="pronoun-speed" min="0.5" max="1.5" step="0.1" value="0.8" style="flex:1">
+          <span id="pronoun-speed-lbl" style="font-size:12px;font-weight:700;color:var(--text-m)">0.8×</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-l);width:100%;">DIFFICULT WORDS TO PRACTICE:</span>
+          <button class="example-btn" onclick="document.getElementById('pronoun-input').value=this.textContent;speakPronoun()">photosynthesis</button>
+          <button class="example-btn" onclick="document.getElementById('pronoun-input').value=this.textContent;speakPronoun()">encyclopedia</button>
+          <button class="example-btn" onclick="document.getElementById('pronoun-input').value=this.textContent;speakPronoun()">rhythm</button>
+          <button class="example-btn" onclick="document.getElementById('pronoun-input').value=this.textContent;speakPronoun()">onomatopoeia</button>
+          <button class="example-btn" onclick="document.getElementById('pronoun-input').value=this.textContent;speakPronoun()">necessary</button>
+          <button class="example-btn" onclick="document.getElementById('pronoun-input').value=this.textContent;speakPronoun()">Wednesday</button>
+          <button class="example-btn" onclick="document.getElementById('pronoun-input').value=this.textContent;speakPronoun()">lieutenant</button>
+          <button class="example-btn" onclick="document.getElementById('pronoun-input').value=this.textContent;speakPronoun()">bureaucracy</button>
+        </div>
+        <div id="pronoun-status" style="font-size:14px;font-weight:700;color:var(--green);min-height:24px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     NOTEBOOK WORKSPACE (standalone)
+══════════════════════════════════════════════ -->
+<div id="workspace-notebook" class="workspace" style="display:none">
+  <div style="max-width:960px;margin:0 auto;padding:24px;">
+    <h2 style="font-size:24px;font-weight:900;color:var(--text-h);margin-bottom:4px;">📒 My Word Notebook</h2>
+    <p style="font-size:14px;color:var(--text-m);margin-bottom:20px;">All words you saved while reading lessons</p>
+    <div class="nb-topbar" style="border-radius:var(--r-md) var(--r-md) 0 0;border:2px solid var(--border);">
+      <span class="nb-stat" id="nb-cnt2">0</span><span class="nb-stat-lbl"> words saved</span>
+      <span class="nb-sep">·</span>
+      <span class="nb-mastered" id="nb-mastered2">0</span><span class="nb-stat-lbl"> mastered ⭐</span>
+      <div class="sp"></div>
+      <button class="action-btn" onclick="startPractice()" style="background:var(--purple);color:white;border-color:var(--purple)">🎯 Practice</button>
+      <button class="action-btn" onclick="exportVocab()">📋 Export</button>
+      <button class="action-btn danger" onclick="clearVocab()">✕ Clear all</button>
+    </div>
+    <div class="nb-filterbar" style="border:2px solid var(--border);border-top:none;border-bottom:none;">
+      <button class="nb-filter active" onclick="setNBFilter(this,'all')">All</button>
+      <button class="nb-filter" onclick="setNBFilter(this,'new')">🆕 New</button>
+      <button class="nb-filter" onclick="setNBFilter(this,'master')">⭐ Mastered</button>
+    </div>
+    <div class="nb-grid" id="nb-grid2" style="border:2px solid var(--border);border-top:none;border-radius:0 0 var(--r-md) var(--r-md);padding:14px;background:white;min-height:200px;"></div>
+  </div>
+</div>
+
+<!-- ══ OVERLAYS (shared across workspaces) ══ -->
+
+<!-- Image context menu -->
+<div class="float-menu" id="img-ctx">
+  <div class="fm-hdr">Image Options</div>
+  <div class="fm-item" onclick="imgCtx('read')"><div class="fm-ic" style="background:var(--blue-l)">🔍</div> Read text from image</div>
+  <div class="fm-item" onclick="imgCtx('explain')"><div class="fm-ic" style="background:var(--purple-l)">🧠</div> Explain this image</div>
+  <div class="fm-item" onclick="imgCtx('pdf')"><div class="fm-ic" style="background:var(--green-l)">📄</div> Save page as PDF</div>
+</div>
+
+<!-- Text selection popup -->
 <div class="float-menu" id="sel-pop">
   <div class="fm-hdr">What would you like?</div>
   <div class="fm-sel-preview" id="sel-preview"></div>
-  <div class="fm-item" onclick="selAct('explain')">   <div class="fm-ic" style="background:var(--blue-l)">🧠</div> Explain simply</div>
-  <div class="fm-item" onclick="selAct('translate')"> <div class="fm-ic" style="background:var(--purple-l)">🌍</div> Translate</div>
-  <div class="fm-item" onclick="selAct('dict')">      <div class="fm-ic" style="background:var(--teal-l)">📚</div> Look up in Dictionary</div>
-  <div class="fm-item" onclick="selAct('search')">    <div class="fm-ic" style="background:var(--blue-l)">🔍</div> Search online</div>
-  <div class="fm-item" onclick="selAct('tts')">       <div class="fm-ic" style="background:var(--green-l)">🔊</div> Read aloud</div>
-  <div class="fm-item" onclick="selAct('save')">      <div class="fm-ic" style="background:var(--amber-l)">📒</div> Save to Notebook</div>
+  <div class="fm-item" onclick="selAct('explain')"><div class="fm-ic" style="background:var(--blue-l)">🧠</div> Explain simply</div>
+  <div class="fm-item" onclick="selAct('translate')"><div class="fm-ic" style="background:var(--purple-l)">🌍</div> Translate</div>
+  <div class="fm-item" onclick="selAct('dict')"><div class="fm-ic" style="background:var(--teal-l)">📚</div> Look up in Dictionary</div>
+  <div class="fm-item" onclick="selAct('search')"><div class="fm-ic" style="background:var(--blue-l)">🔍</div> Search online</div>
+  <div class="fm-item" onclick="selAct('tts')"><div class="fm-ic" style="background:var(--green-l)">🔊</div> Read aloud</div>
+  <div class="fm-item" onclick="selAct('save')"><div class="fm-ic" style="background:var(--amber-l)">📒</div> Save to Notebook</div>
 </div>
 
-<!-- MAXIMIZE VIEW OVERLAY -->
+<!-- Maximize view overlay -->
 <div id="max-overlay" style="display:none;position:fixed;inset:0;z-index:5000;background:#fff;flex-direction:column;">
-
-  <!-- Max overlay header -->
   <div style="display:flex;align-items:center;gap:10px;padding:0 18px;height:52px;border-bottom:2px solid var(--border);background:var(--cream);flex-shrink:0;">
     <span style="font-size:15px;font-weight:800;color:var(--text-h)">📖 Lesson Viewer — Maximized</span>
     <div style="font-size:12px;font-weight:600;color:var(--text-m)" id="max-pg-lbl">Page 1 of 1</div>
@@ -345,58 +686,44 @@
     <button class="action-btn" onclick="savePDF()">⬇ PDF</button>
     <button class="action-btn" onclick="closeMaxView()" style="background:var(--text-h);color:white;border-color:var(--text-h)">✕ Close</button>
   </div>
-
-  <!-- Max body: image left, AI panel right -->
   <div style="display:flex;flex:1 1 0;overflow:hidden;min-height:0;height:0;">
-
-    <!-- Image side — 70% -->
     <div style="width:70%;min-width:0;display:flex;flex-direction:column;border-right:2px solid var(--border);background:#f8faff;overflow:hidden;min-height:0;">
-      <!-- Thumb strip -->
       <div id="max-thumb-bar" style="display:flex;gap:6px;padding:7px 12px;border-bottom:1.5px solid var(--border);overflow-x:auto;background:var(--cream);flex-shrink:0;scrollbar-width:none;"></div>
-      <!-- Canvas wrapper — fills all remaining height -->
       <div id="max-canvas-wrap" style="flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px;">
-        <canvas id="max-canvas" style="display:none;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);border:2px solid var(--border);cursor:crosshair;"></canvas>
+        <canvas id="max-canvas" style="display:none;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);border:2px solid var(--border);cursor:crosshair;max-width:100%;max-height:100%;"></canvas>
       </div>
-      <!-- Max status bar -->
       <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1.5px solid var(--border);background:var(--cream);flex-shrink:0;">
-        <button class="tts-circle" id="max-tts-btn" onclick="toggleTTSMax()" title="Read aloud">▶</button>
+        <button class="tts-circle" id="max-tts-btn" onclick="toggleTTSMax()">▶</button>
         <span id="max-status-text" style="font-size:12px;font-weight:600;color:var(--text-m);flex:1;">Click "🔍 Map Words" to make text interactive</span>
       </div>
-      <!-- Selected word row -->
       <div id="max-sel-row" style="display:none;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid var(--border);background:var(--blue-l);">
         <span style="font-size:13px;font-weight:700;color:var(--blue-d)">Selected:</span>
         <span id="max-sel-text" style="font-size:15px;font-weight:800;color:var(--text-h);flex:1;"></span>
         <button class="action-btn primary" style="height:30px;padding:0 12px;font-size:12px" onclick="useMaxSelected()">Use this ✦</button>
       </div>
     </div>
-
-    <!-- AI side — 30% -->
     <div style="width:30%;min-width:0;display:flex;flex-direction:column;background:var(--bg-side);overflow:hidden;min-height:0;">
-      <!-- Mini tabs -->
       <div style="display:flex;border-bottom:2px solid var(--border);background:white;flex-shrink:0;overflow-x:auto;scrollbar-width:none;">
-        <div class="tnav-tab active" id="mtab-search"    onclick="switchMaxTab('search')">   🔍 Search</div>
-        <div class="tnav-tab"       id="mtab-explain"   onclick="switchMaxTab('explain')">  🧠 Explain</div>
+        <div class="tnav-tab active" id="mtab-search"    onclick="switchMaxTab('search')">🔍 Search</div>
+        <div class="tnav-tab"       id="mtab-explain"   onclick="switchMaxTab('explain')">🧠 Explain</div>
         <div class="tnav-tab"       id="mtab-translate" onclick="switchMaxTab('translate')">🌍 Translate</div>
-        <div class="tnav-tab"       id="mtab-quiz"      onclick="switchMaxTab('quiz')">     ❓ Quiz</div>
+        <div class="tnav-tab"       id="mtab-quiz"      onclick="switchMaxTab('quiz')">❓ Quiz</div>
       </div>
-      <!-- Query bar -->
       <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1.5px solid var(--border);background:white;flex-shrink:0;" id="max-query-bar">
         <input class="q-field" id="max-q-field" type="text" placeholder="Type a word…" style="font-size:13px;" onkeydown="if(event.key==='Enter')goMaxQuery()">
         <button class="ask-btn" style="padding:8px 14px;font-size:13px" onclick="goMaxQuery()">Ask AI</button>
       </div>
-      <!-- Content -->
       <div id="max-r-content" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:thin;"></div>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
+<!-- Toast -->
 <div class="toast" id="toast"></div>
 
-
-
-  <!-- Main Application -->
-  <script src="app.js"></script>
+<!-- App scripts -->
+<script src="app.js"></script>
+<script src="math.js"></script>
 
 </body>
 </html>
