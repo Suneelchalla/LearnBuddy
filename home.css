@@ -988,6 +988,13 @@
   font-weight: 600;
   margin-bottom: 6px;
 }
+.wotd-panel-fullmean {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
 .wotd-panel-example {
   font-size: 13px;
   font-style: italic;
