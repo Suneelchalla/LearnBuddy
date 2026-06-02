@@ -713,10 +713,34 @@
           <div class="geo-card" style="flex:1;min-width:220px;"><div class="geo-name">Number → Roman</div><input id="rom-num" type="number" min="1" max="3999" value="2024" class="geo-inp" oninput="convertRoman()"><div id="rom-result" style="font-size:32px;font-weight:900;color:var(--blue-d);margin-top:10px;letter-spacing:2px;"></div></div>
           <div class="geo-card" style="flex:1;min-width:220px;"><div class="geo-name">Roman → Number</div><input id="rom-input" type="text" value="MMXXIV" class="geo-inp" placeholder="e.g. XIV" oninput="convertFromRoman()"><div id="rom-from-result" style="font-size:32px;font-weight:900;color:var(--purple);margin-top:10px;"></div></div>
         </div>
-        <div style="background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);overflow:hidden;">
-          <div style="padding:12px 16px;font-size:13px;font-weight:800;color:var(--text-h);border-bottom:1px solid var(--border);">Roman Numeral Reference Table</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0;">
-            ${[['I','1'],['V','5'],['X','10'],['L','50'],['C','100'],['D','500'],['M','1000'],['IV','4'],['IX','9'],['XL','40'],['XC','90'],['CD','400'],['CM','900']].map(([r,n])=>`<div style="padding:10px 14px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);"><span style="font-size:16px;font-weight:900;color:var(--blue-d)">${r}</span><span style="font-size:13px;color:var(--text-m);margin-left:8px;">= ${n}</span></div>`).join('')}
+        <div style="background:var(--white);border:2px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin-bottom:16px;">
+          <div style="padding:12px 16px;font-size:14px;font-weight:900;color:var(--text-h);border-bottom:2px solid var(--border);background:var(--cream);">📜 Roman Numeral Cheat Sheet — memorise these 7 symbols!</div>
+
+          <!-- The 7 base symbols — large and visual -->
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:2px solid var(--border);">
+            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#eef2ff;"><div style="font-size:28px;font-weight:900;color:#4f6ef7;">I</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">1</div><div style="font-size:10px;color:#64748b;font-weight:700;">one</div></div>
+            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#fef3c7;"><div style="font-size:28px;font-weight:900;color:#d97706;">V</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">5</div><div style="font-size:10px;color:#64748b;font-weight:700;">five</div></div>
+            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#dcfce7;"><div style="font-size:28px;font-weight:900;color:#16a34a;">X</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">10</div><div style="font-size:10px;color:#64748b;font-weight:700;">ten</div></div>
+            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#fae8ff;"><div style="font-size:28px;font-weight:900;color:#9333ea;">L</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">50</div><div style="font-size:10px;color:#64748b;font-weight:700;">fifty</div></div>
+            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#ffedd5;"><div style="font-size:28px;font-weight:900;color:#ea580c;">C</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">100</div><div style="font-size:10px;color:#64748b;font-weight:700;">hundred</div></div>
+            <div style="padding:14px 8px;text-align:center;border-right:1px solid var(--border);background:#fce7f3;"><div style="font-size:28px;font-weight:900;color:#db2777;">D</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">500</div><div style="font-size:10px;color:#64748b;font-weight:700;">five hundred</div></div>
+            <div style="padding:14px 8px;text-align:center;background:#e0f2fe;"><div style="font-size:28px;font-weight:900;color:#0284c7;">M</div><div style="font-size:18px;font-weight:800;color:#1e293b;margin:2px 0;">1000</div><div style="font-size:10px;color:#64748b;font-weight:700;">thousand</div></div>
+          </div>
+
+          <!-- The subtraction rules — common combos -->
+          <div style="padding:10px 14px;font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--text-l);border-bottom:1px solid var(--border);background:#f8faff;">✂️ Subtraction rule — smaller before bigger means subtract</div>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);">
+            <div style="padding:10px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#4f6ef7;">IV</div><div style="font-size:14px;font-weight:800;color:#1e293b;">4</div><div style="font-size:9px;color:#94a3b8;">5−1</div></div>
+            <div style="padding:10px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#4f6ef7;">IX</div><div style="font-size:14px;font-weight:800;color:#1e293b;">9</div><div style="font-size:9px;color:#94a3b8;">10−1</div></div>
+            <div style="padding:10px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#16a34a;">XL</div><div style="font-size:14px;font-weight:800;color:#1e293b;">40</div><div style="font-size:9px;color:#94a3b8;">50−10</div></div>
+            <div style="padding:10px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#16a34a;">XC</div><div style="font-size:14px;font-weight:800;color:#1e293b;">90</div><div style="font-size:9px;color:#94a3b8;">100−10</div></div>
+            <div style="padding:10px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#ea580c;">CD</div><div style="font-size:14px;font-weight:800;color:#1e293b;">400</div><div style="font-size:9px;color:#94a3b8;">500−100</div></div>
+            <div style="padding:10px 6px;text-align:center;border-bottom:1px solid var(--border);background:#fafafa;"><div style="font-size:18px;font-weight:900;color:#ea580c;">CM</div><div style="font-size:14px;font-weight:800;color:#1e293b;">900</div><div style="font-size:9px;color:#94a3b8;">1000−100</div></div>
+          </div>
+
+          <!-- Memory tip -->
+          <div style="padding:10px 14px;font-size:12px;font-weight:700;color:#1e40af;background:#eff6ff;border-top:1px solid #bfdbfe;">
+            💡 <strong>Memory trick:</strong> <span style="letter-spacing:.05em;">I</span> Value <span style="letter-spacing:.05em;">X</span>tra <span style="letter-spacing:.05em;">L</span>arge <span style="letter-spacing:.05em;">C</span>ows <span style="letter-spacing:.05em;">D</span>rink <span style="letter-spacing:.05em;">M</span>ilk &nbsp;→&nbsp; <strong>I&nbsp; V&nbsp; X&nbsp; L&nbsp; C&nbsp; D&nbsp; M</strong>
           </div>
         </div>
         <div style="margin-top:16px;padding:14px;background:var(--blue-l);border-radius:var(--r-md);">
