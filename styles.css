@@ -319,13 +319,57 @@ html, body {
 /* Image viewer — fills ALL remaining left panel space */
 .viewer {
   display: none;
-  flex: 1 1 0;   /* flex-grow:1, flex-shrink:1, flex-basis:0 — takes ALL remaining height */
-  min-height: 0; /* critical for flex children to shrink below content size */
-  overflow: hidden;
-  padding: 8px;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden; /* outer hides overflow, scroll-wrap handles scrollbars */
   background: #f8faff;
+}
+/* Scroll container inside viewer — shows scrollbars when zoomed */
+#canvas-scroll-wrap {
+  width: 100%; height: 100%;
+  overflow: auto;
+  display: flex;
   align-items: center;
   justify-content: center;
+  padding: 10px;
+  box-sizing: border-box;
+  /* Custom scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79,110,247,.4) transparent;
+}
+#canvas-scroll-wrap::-webkit-scrollbar { width: 8px; height: 8px; }
+#canvas-scroll-wrap::-webkit-scrollbar-track { background: transparent; }
+#canvas-scroll-wrap::-webkit-scrollbar-thumb {
+  background: rgba(79,110,247,.35);
+  border-radius: 4px;
+}
+#canvas-scroll-wrap::-webkit-scrollbar-thumb:hover {
+  background: rgba(79,110,247,.6);
+}
+#canvas-scroll-wrap::-webkit-scrollbar-corner { background: transparent; }
+/* When zoomed in, switch to top-left alignment so scrollbars work correctly */
+#canvas-scroll-wrap.zoomed {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+/* Scale wrapper — transform applied here */
+#canvas-scale-wrap {
+  transform-origin: top left;
+  flex-shrink: 0;
+  position: relative;
+  display: inline-block;
+  /* Smooth zoom transition */
+  transition: transform 0.05s ease-out;
+}
+#lesson-canvas {
+  display: none;
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg);
+  border: 2px solid var(--border);
+  cursor: crosshair;
+  /* Canvas always at its natural pixel size — zoom via parent transform */
+  max-width: none !important;
+  max-height: none !important;
 }
 .viewer-inner {
   display: flex;
