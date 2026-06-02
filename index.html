@@ -1138,8 +1138,11 @@
   <div style="display:flex;flex:1 1 0;overflow:hidden;min-height:0;height:0;">
     <div style="width:70%;min-width:0;display:flex;flex-direction:column;border-right:2px solid var(--border);background:#f8faff;overflow:hidden;min-height:0;">
       <div id="max-thumb-bar" style="display:flex;gap:6px;padding:7px 12px;border-bottom:1.5px solid var(--border);overflow-x:auto;background:var(--cream);flex-shrink:0;scrollbar-width:none;"></div>
-      <div id="max-canvas-wrap" style="flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px;">
-        <canvas id="max-canvas" style="display:none;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);border:2px solid var(--border);cursor:crosshair;max-width:100%;max-height:100%;"></canvas>
+      <!-- Max viewer: scroll container + scale wrapper (same as main viewer) -->
+      <div id="max-canvas-wrap" style="flex:1 1 0;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;padding:8px;scrollbar-width:thin;scrollbar-color:rgba(79,110,247,.4) transparent;">
+        <div id="max-canvas-scale-wrap" style="transform-origin:top left;flex-shrink:0;display:inline-block;transition:transform 0.05s ease-out;">
+          <canvas id="max-canvas" style="display:none;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);border:2px solid var(--border);cursor:crosshair;"></canvas>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1.5px solid var(--border);background:var(--cream);flex-shrink:0;">
         <button class="tts-circle" id="max-tts-btn" onclick="toggleTTSMax()">▶</button>
