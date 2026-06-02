@@ -2134,6 +2134,8 @@ function openMaxView() {
   if (!pages.length) { toast('⚠️ Upload an image first'); return; }
   const overlay = document.getElementById('max-overlay');
   overlay.style.display = 'flex';
+  // Force layout before loadMaxPage measures container
+  void overlay.offsetWidth;
   renderMaxThumbs();
   loadMaxPage(curPage);
   switchMaxTab('search');
@@ -2194,8 +2196,8 @@ function loadMaxPage(i) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0);
 
-    // Fit to container using transform:scale (same approach as main viewer)
-    requestAnimationFrame(() => fitMaxCanvas());
+    // Double rAF: first frame updates display, second has real dimensions
+    requestAnimationFrame(() => requestAnimationFrame(() => fitMaxCanvas()));
 
     initMaxCanvasEvents(canvas, img);
   };
@@ -2203,27 +2205,45 @@ function loadMaxPage(i) {
 }
 
 function fitMaxCanvas() {
-  const canvas    = document.getElementById('max-canvas');
-  const scaleWrap = document.getElementById('max-canvas-scale-wrap');
-  const scrollWrap= document.getElementById('max-canvas-wrap');
+  const canvas     = document.getElementById('max-canvas');
+  const scaleWrap  = document.getElementById('max-canvas-scale-wrap');
+  const scrollWrap = document.getElementById('max-canvas-wrap');
   if (!canvas || !scaleWrap || !scrollWrap) return;
   if (!canvas.width || !canvas.height) return;
 
-  const availW = scrollWrap.clientWidth  - 20;
-  const availH = scrollWrap.clientHeight - 20;
-  if (availW <= 0 || availH <= 0) return;
+  // Reset transform so we can measure clean dimensions
+  scaleWrap.style.transform  = 'none';
+  scaleWrap.style.marginLeft = '0';
+  scaleWrap.style.marginTop  = '0';
+  scaleWrap.style.width      = canvas.width  + 'px';
+  scaleWrap.style.height     = canvas.height + 'px';
 
-  // Scale to fill the available space (can scale UP unlike the old approach)
+  // Force a layout flush so clientWidth/Height are accurate
+  void scrollWrap.offsetWidth;
+
+  const availW = scrollWrap.clientWidth  - 24;
+  const availH = scrollWrap.clientHeight - 24;
+
+  // If container not laid out yet, retry on next frame
+  if (availW <= 0 || availH <= 0) {
+    requestAnimationFrame(fitMaxCanvas);
+    return;
+  }
+
   const fitScale = Math.min(availW / canvas.width, availH / canvas.height);
-  scaleWrap.style.width     = canvas.width  + 'px';
-  scaleWrap.style.height    = canvas.height + 'px';
-  scaleWrap.style.transform = 'scale(' + fitScale + ')';
 
-  // Store fit scale for zoom operations
+  // Centre the scaled image inside the scroll container using margins
+  const scaledW = canvas.width  * fitScale;
+  const scaledH = canvas.height * fitScale;
+  const offsetX = Math.max(0, Math.floor((availW - scaledW) / 2));
+  const offsetY = Math.max(0, Math.floor((availH - scaledH) / 2));
+
+  scaleWrap.style.transformOrigin = 'top left';
+  scaleWrap.style.transform       = 'scale(' + fitScale + ')';
+  scaleWrap.style.marginLeft      = offsetX + 'px';
+  scaleWrap.style.marginTop       = offsetY + 'px';
+
   canvas._maxFitScale = fitScale;
-
-  // Keep scroll container centered (no overflow at fit scale)
-  scrollWrap.classList.remove('zoomed');
   scrollWrap.scrollLeft = 0;
   scrollWrap.scrollTop  = 0;
 }
