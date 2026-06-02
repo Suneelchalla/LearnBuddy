@@ -553,6 +553,7 @@
   transition: all .2s cubic-bezier(.34,1.56,.64,1);
   display: flex;
   flex-direction: column;
+  height: 340px; /* fixed height — banner 130px + body 210px */
 }
 .story-card:hover {
   transform: translateY(-5px);
@@ -583,7 +584,14 @@
   backdrop-filter: blur(4px);
 }
 .story-card-body {
-  padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 6px;
+  padding: 14px 16px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--white);
+  overflow: hidden;
 }
 .story-genre-tag {
   font-size: 10px; font-weight: 800;
