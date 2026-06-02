@@ -129,6 +129,24 @@
       <div class="sc-arrow">→</div>
     </a>
 
+
+    <!-- 📖 Stories -->
+    <a class="subject-card" href="#stories" onclick="openSubject('stories');return false;" style="--card-color:#f97316;--card-bg:linear-gradient(135deg,#fff7ed,#ffedd5);text-decoration:none;color:inherit;">
+      <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#f97316,#ef4444)">📖</div>
+      <div class="sc-content">
+        <div class="sc-title">Stories</div>
+        <div class="sc-desc">52+ stories — Indian mythology, history, world myths, fables, folk tales and real-life heroes. Click any word to explore.</div>
+        <div class="sc-tags">
+          <span class="sc-tag">Mythology</span>
+          <span class="sc-tag">History</span>
+          <span class="sc-tag">Fables</span>
+          <span class="sc-tag">Folk Tales</span>
+          <span class="sc-tag">Heroes</span>
+        </div>
+      </div>
+      <div class="sc-arrow">→</div>
+    </a>
+
   </div><!-- end subjects-grid -->
 
   <!-- Quick stats bar -->
@@ -935,6 +953,91 @@
   </div>
 </div>
 
+
+<!-- ══════════════════════════════════════════════
+     STORIES WORKSPACE
+══════════════════════════════════════════════ -->
+<div id="workspace-stories" class="workspace" style="display:none">
+  <div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
+
+    <!-- Stories List View -->
+    <div id="story-list-view" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+      <!-- Search + genre filters -->
+      <div style="padding:16px 20px 12px;background:var(--white);border-bottom:1.5px solid var(--border);flex-shrink:0;">
+        <h2 style="font-size:20px;font-weight:900;color:var(--text-h);margin-bottom:10px;">📖 Stories — 52+ tales from India and the world</h2>
+        <div id="story-genre-filters" style="display:flex;flex-wrap:wrap;gap:7px;"></div>
+      </div>
+      <!-- Story grid -->
+      <div id="story-grid" style="flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:18px 20px;align-content:start;scrollbar-width:thin;background:var(--bg-page);">
+      </div>
+    </div>
+
+    <!-- Story Reader View (shown when a story is opened) -->
+    <div id="story-reader" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;height:100%;overflow:hidden;">
+
+        <!-- Left: Story content -->
+        <div style="flex:1;display:flex;flex-direction:column;min-width:0;border-right:2px solid var(--border);">
+          <!-- Story reader header -->
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1.5px solid var(--border);background:var(--cream);flex-shrink:0;flex-wrap:wrap;">
+            <button class="action-btn" onclick="closeStoryReader()">← Back</button>
+            <div style="flex:1;min-width:0;">
+              <div id="story-reader-genre" style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);"></div>
+              <div id="story-reader-title" style="font-size:16px;font-weight:900;color:var(--text-h);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+            </div>
+            <button id="story-tts-btn" class="action-btn primary" onclick="toggleStoryTTS()" style="flex-shrink:0;">🔊 Read Aloud</button>
+          </div>
+
+          <!-- Story image + text scroll -->
+          <div style="flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;">
+            <!-- Story image -->
+            <div style="padding:16px 20px 0;text-align:center;">
+              <div style="position:relative;display:inline-block;max-width:100%;">
+                <img id="story-reader-img" style="max-width:100%;max-height:280px;border-radius:var(--r-md);box-shadow:var(--shadow-lg);border:2px solid var(--border);object-fit:cover;" alt="">
+                <div id="story-reader-img-fallback" style="display:none;width:100%;height:200px;background:var(--bg-page);border-radius:var(--r-md);font-size:72px;align-items:center;justify-content:center;border:2px solid var(--border);"></div>
+              </div>
+              <div id="story-img-credit" style="font-size:10px;color:var(--text-l);margin-top:4px;"></div>
+            </div>
+            <!-- Story text -->
+            <div id="story-text-content" style="padding:16px 20px 20px;font-family:'Nunito',sans-serif;font-size:15px;line-height:1.9;color:var(--text-b);"></div>
+            <!-- Lesson / moral -->
+            <div id="story-reader-lesson" style="margin:0 20px 24px;padding:14px 16px;background:var(--amber-l);border-left:4px solid var(--amber);border-radius:var(--r-sm);font-size:14px;font-weight:700;color:#92400e;"></div>
+          </div>
+
+          <!-- Selected word action bar -->
+          <div id="story-action-bar" style="display:none;align-items:center;gap:8px;padding:8px 14px;border-top:1.5px solid var(--border);background:var(--blue-l);flex-shrink:0;flex-wrap:wrap;">
+            <span style="font-size:12px;font-weight:700;color:var(--blue-d)">Selected:</span>
+            <span id="story-selected-word" style="font-size:15px;font-weight:900;color:var(--text-h);"></span>
+            <div style="flex:1"></div>
+            <button class="action-btn" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('dict')">📚 Dictionary</button>
+            <button class="action-btn" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('translate')">🌍 Translate</button>
+            <button class="action-btn" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('search')">🔍 Search</button>
+            <button class="action-btn primary" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('explain')">🧠 Explain</button>
+            <button class="action-btn" style="height:28px;padding:0 8px;font-size:11px" onclick="storyAction('tts')">🔊</button>
+          </div>
+          <!-- Manual word entry -->
+          <div class="manual-row" style="border-top:1px solid var(--border);flex-shrink:0;">
+            <input id="story-q-field" class="manual-inp" type="text" placeholder="Or type any word here…" onkeydown="if(event.key==='Enter')storyGoQuery()">
+            <button class="manual-go" onclick="storyGoQuery()">Go →</button>
+          </div>
+        </div>
+
+        <!-- Right: AI panel (shown when word clicked) -->
+        <div id="story-ai-panel" style="display:none;width:320px;flex-shrink:0;flex-direction:column;overflow:hidden;background:var(--bg-side);">
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1.5px solid var(--border);background:var(--white);flex-shrink:0;">
+            <span style="font-size:13px;font-weight:800;color:var(--text-h);flex:1">Word Explorer</span>
+            <button class="action-btn danger" style="height:26px;padding:0 8px;font-size:11px" onclick="closeStoryAIPanel()">✕</button>
+          </div>
+          <div id="story-ai-content" style="flex:1;overflow-y:auto;scrollbar-width:thin;"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ OVERLAYS ══ -->
 <!-- ══ OVERLAYS (shared across workspaces) ══ -->
 
 <!-- Image context menu -->
@@ -1005,6 +1108,8 @@
 <!-- App scripts -->
 <script src="app.js"></script>
 <script src="math.js"></script>
+<script src="stories.js"></script>
+<script src="stories-ui.js"></script>
 
 </body>
 </html>
