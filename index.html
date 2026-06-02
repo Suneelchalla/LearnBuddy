@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LearnBuddy — Smart Lesson Explorer</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- External Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- App Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     HEADER
+═══════════════════════════════════════ -->
+<header class="header">
+  <div class="logo-mark">📚</div>
+  <div class="logo-text">Learn<span>Buddy</span></div>
+  <div class="logo-tagline">Smart Lesson Explorer</div>
+  <div class="hdr-spacer"></div>
+  <div class="api-zone">
+    <span class="api-zone-label" title="Gemini API Key">🔑</span>
+    <input class="api-input" type="password" id="api-input" placeholder="Paste Gemini API key…" autocomplete="off" title="Get a free key at aistudio.google.com">
+    <div class="api-status" id="api-status" title="API key status"></div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════
+     MAIN BODY
+═══════════════════════════════════════ -->
+<div class="app-body">
+
+<!-- ════ LEFT PANEL — LESSON VIEWER ════ -->
+<div class="panel-left">
+
+  <!-- Panel header -->
+  <div class="panel-hdr">
+    <div class="dot-indicator" style="background:#4f6ef7;box-shadow:0 0 6px rgba(79,110,247,.5)"></div>
+    <span class="panel-hdr-title">📖 Lesson Viewer</span>
+    <div class="sp"></div>
+    <button class="action-btn" id="btn-max" style="display:none" onclick="openMaxView()" title="Maximize view">⛶ Maximize</button>
+    <button class="action-btn primary" id="btn-extract" style="display:none" onclick="extractOCR()">🔍 Map Words</button>
+    <button class="action-btn" id="btn-pdf" style="display:none" onclick="savePDF()">⬇ Save PDF</button>
+    <button class="action-btn danger" id="btn-clr" style="display:none" onclick="clearAll()">✕ Clear</button>
+  </div>
+
+  <!-- Upload zone (shown when empty) -->
+  <div class="upload-area" id="upload-area">
+    <!-- Two upload options side by side -->
+    <div style="display:flex;gap:14px;width:100%;max-width:600px;">
+      <!-- Image upload -->
+      <div class="drop-zone" id="drop-zone" style="flex:1;min-width:0;">
+        <div class="dz-icon">🖼️</div>
+        <div class="dz-title">Images</div>
+        <div class="dz-sub">JPG · PNG · WEBP<br>Multiple files OK</div>
+        <input type="file" id="file-input" accept="image/*" multiple onchange="handleFiles(this.files)">
+      </div>
+      <!-- PDF upload -->
+      <div class="drop-zone" id="pdf-drop-zone" style="flex:1;min-width:0;border-color:#c7d2fe;background:linear-gradient(135deg,#eef2ff,#f5f3ff);">
+        <div class="dz-icon" style="background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(79,110,247,.1));border-color:rgba(139,92,246,.25);">📄</div>
+        <div class="dz-title">PDF File</div>
+        <div class="dz-sub">Upload a PDF textbook<br>Each page shown separately</div>
+        <input type="file" id="pdf-input" accept=".pdf,application/pdf" onchange="handlePDF(this.files[0])">
+      </div>
+    </div>
+    <!-- PDF progress bar (hidden by default) -->
+    <div id="pdf-progress" style="display:none;width:100%;max-width:600px;flex-direction:column;gap:8px;">
+      <div style="font-size:13px;font-weight:700;color:var(--text-m)" id="pdf-progress-label">Converting PDF… page 1 of 1</div>
+      <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
+        <div id="pdf-progress-fill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:4px;transition:width .3s;"></div>
+      </div>
+    </div>
+    <div class="paste-hint">
+      <span class="paste-icon">⌨️</span>
+      <span>Or press <span class="kbd">Ctrl</span>+<span class="kbd">V</span> to paste a screenshot directly!</span>
+    </div>
+    <p class="privacy-note">🔒 All files stay in your browser — nothing is uploaded to any server</p>
+  </div>
+
+  <!-- Thumbnail strip -->
+  <div class="thumb-bar" id="thumb-bar"></div>
+
+  <!-- Interactive canvas viewer — click or drag to select words -->
+  <div class="viewer" id="viewer">
+    <div class="viewer-inner" style="position:relative;width:100%">
+      <!-- Hidden img used as source only -->
+      <img id="cur-img" alt="Lesson page" style="display:none">
+      <!-- Canvas shows image + word highlights -->
+      <canvas id="lesson-canvas"></canvas>
+      <!-- Drag selection overlay -->
+      <div id="sel-box" style="position:absolute;border:2.5px solid var(--blue);background:rgba(79,110,247,.12);border-radius:4px;pointer-events:none;display:none;"></div>
+    </div>
+  </div>
+
+  <!-- Combined bottom bar: TTS + status + selected word + manual input -->
+  <div class="status-bar" id="status-bar" style="flex-direction:column;padding:0;gap:0;">
+    <!-- Row 1: TTS + status text + page label -->
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 14px;width:100%;">
+      <button class="tts-circle" id="tts-btn" onclick="toggleTTS()" title="Read lesson aloud">▶</button>
+      <span class="status-text" id="status-text">Click "🔍 Map Words" — then click or drag on the image</span>
+      <div class="sp"></div>
+      <div id="tts-speed-btns" style="display:none;align-items:center;gap:4px;">
+        <button class="spd-btn" id="spd-slow" onclick="setSpeed(0.7)" title="Slow">🐢</button>
+        <button class="spd-btn active" id="spd-norm" onclick="setSpeed(0.85)" title="Normal">📖</button>
+        <button class="spd-btn" id="spd-fast" onclick="setSpeed(1.1)" title="Fast">🐇</button>
+      </div>
+      <select class="tts-speed" id="tts-speed" style="display:none">
+        <option value="0.7">Slow</option>
+        <option value="0.85" selected>Normal</option>
+        <option value="1.1">Fast</option>
+      </select>
+      <span class="pg-lbl" id="pg-lbl">Page 1</span>
+    </div>
+    <!-- Row 2: Selected word display (hidden until word selected) -->
+    <div id="sel-text-row" style="display:none;align-items:center;gap:10px;padding:6px 14px;border-top:1px solid var(--border);background:var(--blue-l);width:100%;">
+      <span style="font-size:12px;font-weight:700;color:var(--blue-d);white-space:nowrap;">Selected:</span>
+      <span id="sel-text-display" style="font-size:14px;font-weight:800;color:var(--text-h);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+      <button class="action-btn primary" style="height:28px;padding:0 10px;font-size:11px;flex-shrink:0" onclick="useSelectedText()">Use this ✦</button>
+      <button class="action-btn danger" style="height:28px;padding:0 8px;font-size:11px;flex-shrink:0" onclick="clearSelection()">✕</button>
+    </div>
+    <!-- Row 3: Manual input -->
+    <div id="word-area" class="manual-row" style="border-top:1px solid var(--border);">
+      <input class="manual-inp" id="manual-inp" type="text" placeholder="Or type any word here and press Enter…" onkeydown="if(event.key==='Enter'){var v=this.value.trim();if(v){clickWord(v);this.value=''}}">
+      <button class="manual-go" onclick="var v=document.getElementById('manual-inp').value.trim();if(v){clickWord(v);document.getElementById('manual-inp').value=''}">Go →</button>
+    </div>
+  </div>
+
+</div><!-- end panel-left -->
+
+<!-- ════ RIGHT PANEL — AI EXPLANATION ════ -->
+<div class="panel-right">
+
+  <!-- Tab navigation -->
+  <nav class="tab-nav">
+    <div class="tnav-tab active" id="tab-search"    onclick="switchTab('search')" title="Search">   <span class="t-icon">🔍</span><span class="t-label">Search</span></div>
+    <div class="tnav-tab"       id="tab-explain"   onclick="switchTab('explain')" title="Explain">  <span class="t-icon">🧠</span><span class="t-label">Explain</span></div>
+    <div class="tnav-tab"       id="tab-translate" onclick="switchTab('translate')" title="Translate"><span class="t-icon">🌍</span><span class="t-label">Translate</span></div>
+    <div class="tnav-tab"       id="tab-dict"      onclick="switchTab('dict')" title="Dictionary"><span class="t-icon">📚</span><span class="t-label">Dictionary</span></div>
+    <div class="tnav-tab"       id="tab-notebook"  onclick="switchTab('notebook')" title="My Word Notebook" style="border-right:none"><span class="t-icon">📒</span><span class="t-label">Notebook</span></div>
+  </nav>
+
+  <!-- Query bar (hidden on notebook tab) -->
+  <div class="query-bar" id="query-bar">
+    <input class="q-field" id="q-field" type="text" placeholder="Type a word or phrase, or click a word from the lesson…" onkeydown="if(event.key==='Enter')goQuery()">
+    <button class="ask-btn" id="ask-btn" onclick="goQuery()">Ask AI ✦</button>
+  </div>
+
+  <!-- Content area -->
+  <div class="r-area" id="r-area">
+
+    <!-- Empty state -->
+    <div class="empty-state" id="empty-s" style="display:flex">
+      <div class="empty-icon">✨</div>
+      <div class="empty-title">Ready to explore!</div>
+      <div class="empty-sub">Upload a lesson image, then click any word to get started.</div>
+      <div class="empty-steps">
+        <div class="empty-step"><div class="step-num">1</div> Upload or paste a lesson image on the left</div>
+        <div class="empty-step"><div class="step-num">2</div> Click "🔍 Read Image" to extract the text</div>
+        <div class="empty-step"><div class="step-num">3</div> Click any word → choose Explain, Translate or Dictionary</div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-state" id="load-s">
+      <div class="loader"></div>
+      <div class="loader-msg" id="load-msg">Asking Gemini…</div>
+      <div class="loader-sub" id="load-sub">Making it child-friendly</div>
+    </div>
+
+    <!-- Result -->
+    <div class="result-state" id="result-s">
+      <div class="result-hdr">
+        <div class="result-type-tag" id="result-tag">✨ Explanation</div>
+        <div class="result-word-title" id="result-word"></div>
+      </div>
+      <div class="result-scroll" id="result-scroll"></div>
+    </div>
+
+    <!-- Translate tab — Google powered, no API key needed -->
+    <div id="translate-area" style="display:none;flex:1;flex-direction:column;overflow-y:auto;">
+      <div style="padding:18px 20px;">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:#e8f0fe;color:#1a73e8;border:1.5px solid #c5d8fb;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px;">
+          🌍 Google Translate — Free, no API key needed
+        </div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);margin-bottom:6px;">Selected / Typed Text</div>
+        <div id="tr-original" style="font-size:17px;font-weight:700;color:var(--text-h);background:var(--bg-page);border:2px solid var(--border);border-radius:var(--r-md);padding:14px 16px;margin-bottom:16px;line-height:1.55;min-height:52px;">
+          Type or select text to translate
+        </div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);margin-bottom:8px;">Translate to</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px;">
+          <button class="tr-lang-btn active" data-lang="ta" onclick="setTranslateLang(this)">Tamil</button>
+          <button class="tr-lang-btn" data-lang="hi" onclick="setTranslateLang(this)">Hindi</button>
+          <button class="tr-lang-btn" data-lang="en" onclick="setTranslateLang(this)">English</button>
+          <button class="tr-lang-btn" data-lang="te" onclick="setTranslateLang(this)">Telugu</button>
+          <button class="tr-lang-btn" data-lang="kn" onclick="setTranslateLang(this)">Kannada</button>
+          <button class="tr-lang-btn" data-lang="ml" onclick="setTranslateLang(this)">Malayalam</button>
+          <button class="tr-lang-btn" data-lang="fr" onclick="setTranslateLang(this)">French</button>
+          <button class="tr-lang-btn" data-lang="de" onclick="setTranslateLang(this)">German</button>
+          <button class="tr-lang-btn" data-lang="es" onclick="setTranslateLang(this)">Spanish</button>
+          <button class="tr-lang-btn" data-lang="ja" onclick="setTranslateLang(this)">Japanese</button>
+          <button class="tr-lang-btn" data-lang="zh-CN" onclick="setTranslateLang(this)">Chinese</button>
+          <button class="tr-lang-btn" data-lang="ar" onclick="setTranslateLang(this)">Arabic</button>
+        </div>
+        <a id="tr-open-btn" href="#" target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;background:linear-gradient(135deg,#4285f4,#1a73e8);color:white;border-radius:var(--r-md);text-decoration:none;font-size:15px;font-weight:800;box-shadow:0 4px 16px rgba(66,133,244,.35);transition:all .18s;margin-bottom:12px;"
+          onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(66,133,244,.45)'"
+          onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(66,133,244,.35)'">
+          🌐 Open in Google Translate
+        </a>
+        <a id="tr-deepl-btn" href="https://www.deepl.com/translator" target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;background:var(--white);color:var(--text-m);border:2px solid var(--border);border-radius:var(--r-md);text-decoration:none;font-size:13px;font-weight:700;transition:all .18s;margin-bottom:12px;"
+          onmouseover="this.style.borderColor='#0f2b46';this.style.color='#0f2b46'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-m)'">
+          🔤 Also try DeepL — often more accurate
+        </a>
+        <div style="font-size:11px;font-weight:600;color:var(--text-l);text-align:center;">
+          Both links open free in a new tab — no API key needed
+        </div>
+      </div>
+    </div>
+
+    <!-- Search tab -->
+    <div id="search-area" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+      <div class="search-area">
+        <div class="search-for-label">Searching for</div>
+        <div class="search-term-display" id="search-term">your topic</div>
+        <div class="search-grid">
+          <a class="search-card g" id="sl-g" href="#" target="_blank"><div class="sc-em">🔍</div><div class="sc-title">Google</div><div class="sc-desc">Search the web</div></a>
+          <a class="search-card w" id="sl-w" href="#" target="_blank"><div class="sc-em">📖</div><div class="sc-title">Wikipedia</div><div class="sc-desc">Free encyclopedia</div></a>
+          <a class="search-card k" id="sl-k" href="#" target="_blank"><div class="sc-em">🎓</div><div class="sc-title">Khan Academy</div><div class="sc-desc">Free lessons</div></a>
+          <a class="search-card y" id="sl-y" href="#" target="_blank"><div class="sc-em">▶️</div><div class="sc-title">YouTube</div><div class="sc-desc">Kids videos</div></a>
+        </div>
+        <div class="search-free-note">🔓 All links open free in a new tab — no API key needed</div>
+      </div>
+    </div>
+
+    <!-- Dictionary tab — Free Dictionary API, no key needed -->
+    <div id="dict-area" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+      <!-- Dict header with word display -->
+      <div style="padding:10px 18px 0;border-bottom:1.5px solid var(--border);background:var(--white);flex-shrink:0;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);">📚 Oxford Dictionary</span>
+          <span style="flex:1"></span>
+          <span style="font-size:11px;font-weight:600;color:var(--text-l);">Free · No API key</span>
+        </div>
+      </div>
+      <!-- Loading state -->
+      <div id="dict-loading" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:14px;">
+        <div class="loader"></div>
+        <div style="font-size:14px;font-weight:700;color:var(--text-m)">Looking up dictionary…</div>
+      </div>
+      <!-- Results -->
+      <div id="dict-results" style="flex:1;overflow-y:auto;padding:16px 18px;scrollbar-width:thin;scrollbar-color:var(--border) transparent;"></div>
+    </div>
+
+    <!-- Notebook tab -->
+    <div id="notebook-area" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+      <div class="notebook-area">
+        <div class="nb-topbar">
+          <span class="nb-stat" id="nb-cnt">0</span><span class="nb-stat-lbl"> words saved</span>
+          <span class="nb-sep">·</span>
+          <span class="nb-mastered" id="nb-mastered">0</span><span class="nb-stat-lbl"> mastered ⭐</span>
+          <div class="sp"></div>
+          <button class="action-btn" onclick="startPractice()" style="background:var(--purple);color:white;border-color:var(--purple)">🎯 Practice</button>
+          <button class="action-btn" onclick="exportVocab()">📋 Export</button>
+          <button class="action-btn danger" onclick="clearVocab()">✕ Clear all</button>
+        </div>
+        <div class="nb-filterbar">
+          <button class="nb-filter active" id="nbf-all"    onclick="setNBFilter(this,'all')">All</button>
+          <button class="nb-filter"        id="nbf-new"    onclick="setNBFilter(this,'new')">🆕 New</button>
+          <button class="nb-filter"        id="nbf-master" onclick="setNBFilter(this,'master')">⭐ Mastered</button>
+        </div>
+        <div class="nb-grid" id="nb-grid"></div>
+        <div class="nb-empty" id="nb-empty">
+          <div style="font-size:48px">📒</div>
+          <div style="font-size:17px;font-weight:900;color:var(--text-h)">Your Word Notebook is empty</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-m);max-width:260px;line-height:1.65;text-align:center">
+            Click any word in the lesson → select <strong style="color:var(--blue)">"Save to Notebook"</strong> to build your personal dictionary
+          </div>
+        </div>
+        <div class="practice-mode" id="practice-mode">
+          <div class="pr-progress">
+            <div class="pr-bar-track"><div class="pr-bar-fill" id="pr-fill"></div></div>
+            <span class="pr-lbl" id="pr-lbl">1 / 1</span>
+          </div>
+          <div class="pr-word" id="pr-word"></div>
+          <div class="pr-hint">What does this word mean?</div>
+          <div id="pr-reveal-wrap">
+            <button class="pr-reveal-btn" onclick="revealPractice()">👁 Show Answer</button>
+          </div>
+          <div class="pr-answer" id="pr-answer" style="display:none">
+            <div class="pr-meaning-card" id="pr-meaning"></div>
+            <div class="pr-example-text" id="pr-example"></div>
+            <div class="pr-choice">
+              <button class="pr-still" onclick="practiceMark(false)">❌ Still learning</button>
+              <button class="pr-got"   onclick="practiceMark(true)">⭐ Got it!</button>
+            </div>
+          </div>
+          <button class="action-btn" onclick="endPractice()" style="margin-top:18px">✕ Exit Practice</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end r-area -->
+</div><!-- end panel-right -->
+</div><!-- end app-body -->
+
+<!-- IMAGE CONTEXT MENU -->
+<div class="float-menu" id="img-ctx">
+  <div class="fm-hdr">Image Options</div>
+  <div class="fm-item" onclick="imgCtx('read')">     <div class="fm-ic" style="background:var(--blue-l)">🔍</div> Read text from image (OCR)</div>
+  <div class="fm-item" onclick="imgCtx('explain')">  <div class="fm-ic" style="background:var(--purple-l)">🧠</div> Explain this image with AI</div>
+  <div class="fm-item" onclick="imgCtx('pdf')">      <div class="fm-ic" style="background:var(--green-l)">📄</div> Save page as PDF</div>
+</div>
+
+<!-- TEXT SELECTION POPUP -->
+<div class="float-menu" id="sel-pop">
+  <div class="fm-hdr">What would you like?</div>
+  <div class="fm-sel-preview" id="sel-preview"></div>
+  <div class="fm-item" onclick="selAct('explain')">   <div class="fm-ic" style="background:var(--blue-l)">🧠</div> Explain simply</div>
+  <div class="fm-item" onclick="selAct('translate')"> <div class="fm-ic" style="background:var(--purple-l)">🌍</div> Translate</div>
+  <div class="fm-item" onclick="selAct('dict')">      <div class="fm-ic" style="background:var(--teal-l)">📚</div> Look up in Dictionary</div>
+  <div class="fm-item" onclick="selAct('search')">    <div class="fm-ic" style="background:var(--blue-l)">🔍</div> Search online</div>
+  <div class="fm-item" onclick="selAct('tts')">       <div class="fm-ic" style="background:var(--green-l)">🔊</div> Read aloud</div>
+  <div class="fm-item" onclick="selAct('save')">      <div class="fm-ic" style="background:var(--amber-l)">📒</div> Save to Notebook</div>
+</div>
+
+<!-- MAXIMIZE VIEW OVERLAY -->
+<div id="max-overlay" style="display:none;position:fixed;inset:0;z-index:5000;background:#fff;flex-direction:column;">
+
+  <!-- Max overlay header -->
+  <div style="display:flex;align-items:center;gap:10px;padding:0 18px;height:52px;border-bottom:2px solid var(--border);background:var(--cream);flex-shrink:0;">
+    <span style="font-size:15px;font-weight:800;color:var(--text-h)">📖 Lesson Viewer — Maximized</span>
+    <div style="font-size:12px;font-weight:600;color:var(--text-m)" id="max-pg-lbl">Page 1 of 1</div>
+    <div style="flex:1"></div>
+    <button class="action-btn primary" onclick="extractOCRMax()" id="max-btn-extract">🔍 Map Words</button>
+    <button class="action-btn" onclick="savePDF()">⬇ PDF</button>
+    <button class="action-btn" onclick="closeMaxView()" style="background:var(--text-h);color:white;border-color:var(--text-h)">✕ Close</button>
+  </div>
+
+  <!-- Max body: image left, AI panel right -->
+  <div style="display:flex;flex:1 1 0;overflow:hidden;min-height:0;height:0;">
+
+    <!-- Image side — 70% -->
+    <div style="width:70%;min-width:0;display:flex;flex-direction:column;border-right:2px solid var(--border);background:#f8faff;overflow:hidden;min-height:0;">
+      <!-- Thumb strip -->
+      <div id="max-thumb-bar" style="display:flex;gap:6px;padding:7px 12px;border-bottom:1.5px solid var(--border);overflow-x:auto;background:var(--cream);flex-shrink:0;scrollbar-width:none;"></div>
+      <!-- Canvas wrapper — fills all remaining height -->
+      <div id="max-canvas-wrap" style="flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:8px;">
+        <canvas id="max-canvas" style="display:none;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);border:2px solid var(--border);cursor:crosshair;"></canvas>
+      </div>
+      <!-- Max status bar -->
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-top:1.5px solid var(--border);background:var(--cream);flex-shrink:0;">
+        <button class="tts-circle" id="max-tts-btn" onclick="toggleTTSMax()" title="Read aloud">▶</button>
+        <span id="max-status-text" style="font-size:12px;font-weight:600;color:var(--text-m);flex:1;">Click "🔍 Map Words" to make text interactive</span>
+      </div>
+      <!-- Selected word row -->
+      <div id="max-sel-row" style="display:none;align-items:center;gap:10px;padding:8px 14px;border-top:1px solid var(--border);background:var(--blue-l);">
+        <span style="font-size:13px;font-weight:700;color:var(--blue-d)">Selected:</span>
+        <span id="max-sel-text" style="font-size:15px;font-weight:800;color:var(--text-h);flex:1;"></span>
+        <button class="action-btn primary" style="height:30px;padding:0 12px;font-size:12px" onclick="useMaxSelected()">Use this ✦</button>
+      </div>
+    </div>
+
+    <!-- AI side — 30% -->
+    <div style="width:30%;min-width:0;display:flex;flex-direction:column;background:var(--bg-side);overflow:hidden;min-height:0;">
+      <!-- Mini tabs -->
+      <div style="display:flex;border-bottom:2px solid var(--border);background:white;flex-shrink:0;overflow-x:auto;scrollbar-width:none;">
+        <div class="tnav-tab active" id="mtab-search"    onclick="switchMaxTab('search')">   🔍 Search</div>
+        <div class="tnav-tab"       id="mtab-explain"   onclick="switchMaxTab('explain')">  🧠 Explain</div>
+        <div class="tnav-tab"       id="mtab-translate" onclick="switchMaxTab('translate')">🌍 Translate</div>
+        <div class="tnav-tab"       id="mtab-quiz"      onclick="switchMaxTab('quiz')">     ❓ Quiz</div>
+      </div>
+      <!-- Query bar -->
+      <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1.5px solid var(--border);background:white;flex-shrink:0;" id="max-query-bar">
+        <input class="q-field" id="max-q-field" type="text" placeholder="Type a word…" style="font-size:13px;" onkeydown="if(event.key==='Enter')goMaxQuery()">
+        <button class="ask-btn" style="padding:8px 14px;font-size:13px" onclick="goMaxQuery()">Ask AI</button>
+      </div>
+      <!-- Content -->
+      <div id="max-r-content" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:thin;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+
+  <!-- Local Dictionary Data (offline fallback) -->
+  <script src="dict.js"></script>
+
+  <!-- Main Application -->
+  <script src="app.js"></script>
+
+</body>
+</html>
