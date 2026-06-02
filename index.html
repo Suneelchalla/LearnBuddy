@@ -997,7 +997,7 @@
      NOTEBOOK WORKSPACE (standalone)
 ══════════════════════════════════════════════ -->
 <div id="workspace-notebook" class="workspace" style="display:none">
-  <div style="max-width:960px;margin:0 auto;padding:24px;">
+  <div style="max-width:960px;margin:0 auto;padding:24px;height:100%;overflow-y:auto;scrollbar-width:thin;">
     <h2 style="font-size:24px;font-weight:900;color:var(--text-h);margin-bottom:4px;">📒 My Word Notebook</h2>
     <p style="font-size:14px;color:var(--text-m);margin-bottom:20px;">All words you saved while reading lessons</p>
     <div class="nb-topbar" style="border-radius:var(--r-md) var(--r-md) 0 0;border:2px solid var(--border);">
@@ -1026,14 +1026,14 @@
   <div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
 
     <!-- Stories List View -->
-    <div id="story-list-view" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+    <div id="story-list-view" style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;">
       <!-- Search + genre filters -->
       <div style="padding:16px 20px 12px;background:var(--white);border-bottom:1.5px solid var(--border);flex-shrink:0;">
         <h2 style="font-size:20px;font-weight:900;color:var(--text-h);margin-bottom:10px;">📖 Stories — 52+ tales from India and the world</h2>
         <div id="story-genre-filters" style="display:flex;flex-wrap:wrap;gap:7px;"></div>
       </div>
       <!-- Story grid -->
-      <div id="story-grid" style="flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:18px 20px;align-content:start;scrollbar-width:thin;background:var(--bg-page);">
+      <div id="story-grid" style="flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:18px 20px;align-content:start;scrollbar-width:thin;scrollbar-color:rgba(79,110,247,.3) transparent;background:var(--bg-page);">
       </div>
     </div>
 
