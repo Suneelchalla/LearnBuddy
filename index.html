@@ -372,7 +372,7 @@
           <button class="tr-lang-btn" data-lang="ar" onclick="setTranslateLang(this)">Arabic</button>
         </div>
         <a id="tr-open-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;width:100%;background:linear-gradient(135deg,#4285f4,#1a73e8);color:white;border-radius:var(--r-md);font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(66,133,244,.35);transition:all .18s;margin-bottom:12px;text-decoration:none;box-sizing:border-box;">🌐 Open in Google Translate</a>
-        <a id="tr-deepl-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;width:100%;background:var(--white);color:var(--text-m);border:2px solid var(--border);border-radius:var(--r-md);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;margin-bottom:12px;text-decoration:none;box-sizing:border-box;">🔤 Also try DeepL</a>
+        <div style="font-size:11px;font-weight:600;color:var(--text-l);text-align:center;">Opens in a new tab — free, no sign-in needed</div>
         <div style="font-size:11px;font-weight:600;color:var(--text-l);text-align:center;">Both links open free in a new tab</div>
       </div>
     </div>
@@ -1147,6 +1147,30 @@
         <button class="ask-btn" style="padding:8px 14px;font-size:13px" onclick="goMaxQuery()">Ask AI</button>
       </div>
       <div id="max-r-content" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;scrollbar-width:thin;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- API Key Modal -->
+<div id="api-key-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.25);padding:32px 28px;width:min(420px,92vw);font-family:var(--font);position:relative;">
+    <button onclick="closeApiModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-l);line-height:1;">✕</button>
+    <div style="font-size:32px;text-align:center;margin-bottom:8px;">🔑</div>
+    <h2 style="font-size:20px;font-weight:900;color:var(--text-h);text-align:center;margin:0 0 6px;">Gemini API Key Needed</h2>
+    <p style="font-size:13px;color:var(--text-m);text-align:center;margin:0 0 20px;line-height:1.6;">This feature uses Google Gemini AI.<br>Paste your free API key below to continue.</p>
+    <input id="modal-api-input" type="password" placeholder="Paste your Gemini API key here…"
+      style="width:100%;padding:13px 14px;border:2.5px solid var(--border);border-radius:12px;font-family:var(--font);font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;transition:border-color .2s;"
+      oninput="onModalKeyInput(this)" onkeydown="if(event.key==='Enter')saveApiKey()">
+    <div id="modal-key-status" style="font-size:12px;font-weight:700;min-height:18px;margin-bottom:14px;text-align:center;"></div>
+    <button onclick="saveApiKey()" id="modal-save-btn"
+      style="width:100%;padding:13px;background:linear-gradient(135deg,#4f6ef7,#8b5cf6);color:white;border:none;border-radius:12px;font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;transition:opacity .2s;">
+      ✅ Save &amp; Continue
+    </button>
+    <div style="text-align:center;margin-top:14px;">
+      <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer"
+        style="font-size:12px;font-weight:700;color:var(--blue);text-decoration:none;">
+        🆓 Get a free Gemini API key at aistudio.google.com →
+      </a>
     </div>
   </div>
 </div>
