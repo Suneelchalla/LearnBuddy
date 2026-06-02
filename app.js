@@ -131,10 +131,15 @@ function showPage(i) {
   const img = document.getElementById('cur-img');
   const canvas = document.getElementById('lesson-canvas');
   img.onload = () => {
-    // Reset canvas buffer size to new image
+    // Set canvas internal buffer = natural image size
     canvas.width  = img.naturalWidth;
     canvas.height = img.naturalHeight;
     canvas.style.display = 'block';
+
+    // Reset zoom and fit canvas to viewer container
+    canvasZoom = 1.0;
+    fitCanvasToViewer();
+
     drawCanvas();
     initCanvasEvents();
   };
@@ -538,40 +543,109 @@ function initCanvasEvents() {
   });
 
   // ── SCROLL TO ZOOM (canvas only, not the page) ──
-  canvas.addEventListener('wheel', e => {
-    e.preventDefault(); // stop page scrolling
-    const zoomStep = 0.12;
-    const minZoom  = 0.3;
-    const maxZoom  = 5.0;
+  // Attach to the scroll wrapper so the wheel is captured before it scrolls
+  const scrollWrap = document.getElementById('canvas-scroll-wrap');
+  if (scrollWrap) {
+    scrollWrap.addEventListener('wheel', e => {
+      e.preventDefault();
+      // Mouse position relative to the scroll container
+      const rect    = scrollWrap.getBoundingClientRect();
+      const mouseX  = e.clientX - rect.left;
+      const mouseY  = e.clientY - rect.top;
+      const prevZoom = canvasZoom;
 
-    if (e.deltaY < 0) {
-      canvasZoom = Math.min(maxZoom, canvasZoom + zoomStep); // scroll up = zoom in
-    } else {
-      canvasZoom = Math.max(minZoom, canvasZoom - zoomStep); // scroll down = zoom out
-    }
+      const factor = e.deltaY < 0 ? 1.1 : 0.91; // smooth multiplicative step
+      canvasZoom = Math.min(8.0, Math.max(0.2, canvasZoom * factor));
 
-    applyCanvasZoom();
-  }, { passive: false }); // passive:false needed to call preventDefault
+      applyCanvasZoom(mouseX, mouseY, prevZoom);
+    }, { passive: false });
+  }
 }
 
-function applyCanvasZoom() {
-  const canvas = document.getElementById('lesson-canvas');
-  const wrap   = document.getElementById('viewer');
-  if (!canvas) return;
 
-  // Get the natural fit size (100% = fills container)
-  const wrapW = wrap ? wrap.clientWidth  - 16 : canvas.parentElement.clientWidth;
-  const wrapH = wrap ? wrap.clientHeight - 16 : canvas.parentElement.clientHeight;
+// ── Fit canvas to viewer on first load (zoom = 1 = fill container) ──
+function fitCanvasToViewer() {
+  const canvas    = document.getElementById('lesson-canvas');
+  const scaleWrap = document.getElementById('canvas-scale-wrap');
+  const scrollWrap= document.getElementById('canvas-scroll-wrap');
+  if (!canvas || !scaleWrap || !scrollWrap) return;
   if (!canvas.width || !canvas.height) return;
 
-  const fitScale = Math.min(wrapW / canvas.width, wrapH / canvas.height, 1);
-  const displayW = Math.round(canvas.width  * fitScale * canvasZoom);
-  const displayH = Math.round(canvas.height * fitScale * canvasZoom);
+  // Available space (subtract padding)
+  const availW = scrollWrap.clientWidth  - 24;
+  const availH = scrollWrap.clientHeight - 24;
 
-  canvas.style.width  = displayW + 'px';
-  canvas.style.height = displayH + 'px';
+  // Compute fit scale — how much to scale to fill the container
+  const fitScale = Math.min(availW / canvas.width, availH / canvas.height, 1);
 
-  // Show zoom level badge
+  // Store as the "100% zoom" base. canvasZoom=1 means fitScale.
+  // We encode this into the CSS directly on the scale wrap.
+  scaleWrap.style.width  = canvas.width  + 'px';
+  scaleWrap.style.height = canvas.height + 'px';
+  scaleWrap.style.transform = 'scale(' + fitScale + ')';
+
+  // Save fitScale so applyCanvasZoom can compute relative to it
+  canvas._fitScale = fitScale;
+  canvasZoom = 1.0; // zoom=1 means "fit to window"
+
+  // Center in scroll container (no scrollbars at zoom=1)
+  scrollWrap.classList.remove('zoomed');
+  scrollWrap.scrollLeft = 0;
+  scrollWrap.scrollTop  = 0;
+}
+
+function applyCanvasZoom(pivotX, pivotY, prevZoom) {
+  const canvas     = document.getElementById('lesson-canvas');
+  const scaleWrap  = document.getElementById('canvas-scale-wrap');
+  const scrollWrap = document.getElementById('canvas-scroll-wrap');
+  if (!canvas || !scaleWrap || !scrollWrap) return;
+  if (!canvas.width || !canvas.height) return;
+
+  // The actual scale = fitScale * canvasZoom
+  // fitScale makes image fill the container at zoom=1
+  const fitScale   = canvas._fitScale || Math.min(
+    (scrollWrap.clientWidth  - 24) / canvas.width,
+    (scrollWrap.clientHeight - 24) / canvas.height, 1
+  );
+  const totalScale = fitScale * canvasZoom;
+
+  scaleWrap.style.width     = canvas.width  + 'px';
+  scaleWrap.style.height    = canvas.height + 'px';
+  scaleWrap.style.transform = 'scale(' + totalScale + ')';
+
+  // Compute actual rendered pixel size for scrollbar spacer
+  const renderedW = Math.round(canvas.width  * totalScale);
+  const renderedH = Math.round(canvas.height * totalScale);
+
+  // Switch scroll alignment: centered when fits, top-left when overflows
+  const viewW = scrollWrap.clientWidth  - 24;
+  const viewH = scrollWrap.clientHeight - 24;
+  if (renderedW > viewW || renderedH > viewH) {
+    scrollWrap.classList.add('zoomed'); // align top-left, enables scrollbars
+  } else {
+    scrollWrap.classList.remove('zoomed'); // keep centered
+  }
+
+  // Spacer forces the scroll container to create scrollbars of the right size
+  let spacer = document.getElementById('canvas-spacer');
+  if (!spacer) {
+    spacer = document.createElement('div');
+    spacer.id = 'canvas-spacer';
+    spacer.style.cssText = 'flex-shrink:0;pointer-events:none;';
+    scrollWrap.appendChild(spacer);
+  }
+  spacer.style.width  = (renderedW + 24) + 'px';
+  spacer.style.height = (renderedH + 24) + 'px';
+
+  // Zoom toward mouse pivot point (keep the point under cursor stationary)
+  if (pivotX !== undefined && prevZoom !== undefined && prevZoom !== canvasZoom) {
+    const prevTotal  = fitScale * prevZoom;
+    const zoomRatio  = totalScale / prevTotal;
+    scrollWrap.scrollLeft = Math.round((scrollWrap.scrollLeft + pivotX) * zoomRatio - pivotX);
+    scrollWrap.scrollTop  = Math.round((scrollWrap.scrollTop  + pivotY) * zoomRatio - pivotY);
+  }
+
+  // Show zoom badge
   showZoomBadge(Math.round(canvasZoom * 100) + '%');
 }
 
@@ -582,15 +656,16 @@ document.addEventListener('keydown', e => {
   if (e.ctrlKey || e.metaKey) {
     if (e.key === '=' || e.key === '+') {
       e.preventDefault();
-      canvasZoom = Math.min(5.0, canvasZoom + 0.15);
+      canvasZoom = Math.min(8.0, canvasZoom * 1.15);
       applyCanvasZoom();
     } else if (e.key === '-') {
       e.preventDefault();
-      canvasZoom = Math.max(0.3, canvasZoom - 0.15);
+      canvasZoom = Math.max(0.2, canvasZoom * 0.87);
       applyCanvasZoom();
     } else if (e.key === '0') {
       e.preventDefault();
       canvasZoom = 1.0;
+      resetCanvasZoom();
       applyCanvasZoom();
     }
   }
@@ -599,8 +674,9 @@ document.addEventListener('keydown', e => {
 // Reset zoom when page changes
 function resetCanvasZoom() {
   canvasZoom = 1.0;
-  const canvas = document.getElementById('lesson-canvas');
-  if (canvas) { canvas.style.width = ''; canvas.style.height = ''; }
+  fitCanvasToViewer();
+  const spacer = document.getElementById('canvas-spacer');
+  if (spacer) spacer.remove();
 }
 
 // Transient zoom badge
@@ -2285,3 +2361,16 @@ if (typeof loadHomeStats === 'function') loadHomeStats();
 switchTab('search');
 renderNotebook();
 updateSearchLinks('');
+
+// Refit canvas on window/panel resize
+if (window.ResizeObserver) {
+  const _viewerObs = new ResizeObserver(() => {
+    const canvas = document.getElementById('lesson-canvas');
+    if (canvas && canvas.style.display !== 'none' && canvas.width) {
+      fitCanvasToViewer();
+      if (canvasZoom !== 1.0) applyCanvasZoom();
+    }
+  });
+  const _scrollWrap = document.getElementById('canvas-scroll-wrap');
+  if (_scrollWrap) _viewerObs.observe(_scrollWrap);
+}
