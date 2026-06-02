@@ -619,3 +619,131 @@
   font-weight: 700;
   border-radius: 4px;
 }
+
+/* ═══════════════════════════════════════════
+   PROFESSIONAL FOOTER
+═══════════════════════════════════════════ */
+.home-footer {
+  background: #1e1b4b;
+  color: #c7d2fe;
+  margin-top: 48px;
+  font-family: var(--font);
+}
+.footer-inner {
+  display: flex;
+  gap: 40px;
+  padding: 40px 32px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+.footer-brand {
+  flex: 1.2;
+  min-width: 220px;
+}
+.footer-logo {
+  font-size: 20px;
+  font-weight: 900;
+  color: white;
+  margin-bottom: 10px;
+  letter-spacing: -.3px;
+}
+.footer-tagline {
+  font-size: 13px;
+  font-weight: 500;
+  color: #a5b4fc;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.footer-features {
+  font-size: 11px;
+  font-weight: 600;
+  color: #818cf8;
+  line-height: 1.8;
+}
+.footer-cols {
+  flex: 2;
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.footer-col {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.footer-col-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #818cf8;
+  margin-bottom: 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.footer-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a5b4fc;
+  text-decoration: none;
+  transition: color .15s;
+  display: block;
+}
+.footer-link:hover { color: white; }
+.footer-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #818cf8;
+  line-height: 1.5;
+}
+
+/* Bottom bar */
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,.1);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 100%;
+}
+.footer-bottom-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #818cf8;
+  flex-wrap: wrap;
+}
+.footer-bottom-left strong { color: #a5b4fc; }
+.footer-sep { color: rgba(255,255,255,.25); }
+.footer-gh-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #a5b4fc;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  transition: color .15s;
+}
+.footer-gh-link:hover { color: white; }
+.footer-bottom-right {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.footer-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.08);
+  color: #a5b4fc;
+  border: 1px solid rgba(255,255,255,.12);
+}
