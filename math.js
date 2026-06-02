@@ -1453,11 +1453,16 @@ async function initWOTD() {
   const today = new Date().toDateString();
   try {
     const cached = JSON.parse(localStorage.getItem('lb_wotd') || 'null');
-    if (cached && cached.date === today && cached.word) {
+    const badMeaning = !cached || !cached.meaning
+      || cached.meaning.includes('wonderful English word')
+      || cached.meaning.includes('worth exploring today');
+    if (cached && cached.date === today && cached.word && !badMeaning) {
       wotdData = cached;
       renderWOTD(cached);
       return;
     }
+    // Clear stale/bad cache
+    if (cached) try { localStorage.removeItem('lb_wotd'); } catch {}
   } catch {}
 
   const word = getWOTDWord();
@@ -1467,12 +1472,12 @@ async function initWOTD() {
 async function fetchAndRenderWOTD(word) {
   showWOTDLoading(true);
 
-  // Step 1: Try Free Dictionary API for phonetic + basic def
-  let phonetic = '', audioUrl = '', pos = 'noun';
+  // Step 1: Free Dictionary API — phonetic, pos, AND real definition
+  let phonetic = '', audioUrl = '', pos = 'adjective', meaning = '', example = '';
   try {
     const ctrl = new AbortController();
-    setTimeout(() => ctrl.abort(), 4000);
-    const res  = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), { signal: ctrl.signal });
+    setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), { signal: ctrl.signal });
     if (res.ok) {
       const data = await res.json();
       const entry = data[0];
@@ -1480,63 +1485,81 @@ async function fetchAndRenderWOTD(word) {
         if (!phonetic && ph.text)  phonetic = ph.text;
         if (!audioUrl && ph.audio) audioUrl = ph.audio.startsWith('//') ? 'https:' + ph.audio : ph.audio;
       });
-      if (entry.meanings?.[0]?.partOfSpeech) pos = entry.meanings[0].partOfSpeech;
+      const firstMeaning = entry.meanings && entry.meanings[0];
+      if (firstMeaning) {
+        pos = firstMeaning.partOfSpeech || pos;
+        const firstDef = firstMeaning.definitions && firstMeaning.definitions[0];
+        if (firstDef) {
+          meaning = firstDef.definition || '';
+          example = firstDef.example   || '';
+        }
+      }
     }
   } catch {}
 
-  // Step 2: Always use Gemini for child-friendly definition, example, fun fact, emoji
-  // If no API key, use a simple offline fallback
+  // Step 2: Datamuse API — backup definition if dictionary API gave nothing
+  if (!meaning) {
+    try {
+      const ctrl2 = new AbortController();
+      setTimeout(() => ctrl2.abort(), 4000);
+      const r2 = await fetch('https://api.datamuse.com/words?sp=' + encodeURIComponent(word) + '&md=d&max=1', { signal: ctrl2.signal });
+      if (r2.ok) {
+        const d2 = await r2.json();
+        if (d2.length && d2[0].defs && d2[0].defs.length) {
+          const parts = d2[0].defs[0].split('\t');
+          if (parts.length >= 2) { pos = parts[0] || pos; meaning = parts[1]; }
+          else meaning = d2[0].defs[0];
+        }
+      }
+    } catch {}
+  }
+
+  // Step 3: Gemini — child-friendly rewrite + fun fact + emoji (if API key available)
   const apiKey = typeof getKey === 'function' ? getKey() : '';
-  let meaning = '', example = '', funFact = '', emoji = WOTD_EMOJIS[word] || '📚';
+  let funFact = '', emoji = WOTD_EMOJIS[word] || '📚';
 
   if (apiKey && apiKey.length > 10) {
     try {
-      const prompt = `For the English word "${word}", create a child-friendly entry for ages 8-12.
-Return ONLY valid JSON (no markdown):
-{
-  "pos": "noun/verb/adjective/etc",
-  "phonetic": "/phonetic/ (if you know it)",
-  "meaning": "Simple 1-2 sentence definition a child will understand easily",
-  "example": "A fun, relatable example sentence using the word",
-  "fun_fact": "One surprising, amazing or funny fact about this word or concept — something a child would love to share with friends",
-  "emoji": "The single most fitting emoji for this word"
-}`;
+      const baseDef = meaning
+        ? 'Dictionary says: "' + meaning + '". Please rewrite simply for a child aged 8-12.'
+        : 'Please define this word simply for a child aged 8-12.';
+      const prompt = 'Word: "' + word + '". ' + baseDef + ' Return ONLY valid JSON no markdown: {"pos":"part of speech","phonetic":"/phonetic/","meaning":"simple 1-2 sentence definition","example":"fun example sentence","fun_fact":"one amazing fact a child would love","emoji":"best single emoji"}';
       const resp = await fetch(
         'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey,
         { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents:[{parts:[{text: prompt}]}], generationConfig:{temperature:0.7, maxOutputTokens:400} }) }
+          body: JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.7,maxOutputTokens:350} }) }
       );
       if (resp.ok) {
         const d = await resp.json();
-        let raw = d.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
-        raw = raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
-        const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
-        if (s >= 0 && e > s) raw = raw.slice(s, e+1);
+        let raw = (d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts && d.candidates[0].content.parts[0] && d.candidates[0].content.parts[0].text) || '{}';
+        raw = raw.replace(/```json/gi,'').replace(/```/gi,'').trim();
+        const si = raw.indexOf('{'), ei = raw.lastIndexOf('}');
+        if (si >= 0 && ei > si) raw = raw.slice(si, ei+1);
         const parsed = JSON.parse(raw);
-        if (parsed.meaning) meaning  = parsed.meaning;
-        if (parsed.example) example  = parsed.example;
-        if (parsed.fun_fact) funFact = parsed.fun_fact;
-        if (parsed.emoji)    emoji   = parsed.emoji;
-        if (parsed.pos)      pos     = parsed.pos;
+        if (parsed.meaning)  meaning  = parsed.meaning;
+        if (parsed.example)  example  = parsed.example;
+        if (parsed.fun_fact) funFact  = parsed.fun_fact;
+        if (parsed.emoji)    emoji    = parsed.emoji;
+        if (parsed.pos)      pos      = parsed.pos;
         if (parsed.phonetic && !phonetic) phonetic = parsed.phonetic;
       }
     } catch {}
   }
 
-  // Fallback if Gemini unavailable
+  // Step 4: LOCAL_DICT and last-resort fallbacks
   if (!meaning) {
     const localEntry = typeof LOCAL_DICT !== 'undefined' ? LOCAL_DICT[word.toLowerCase()] : null;
     if (localEntry) {
       meaning = localEntry.def;
-      example = localEntry.ex || '';
-      pos     = localEntry.pos || pos;
+      if (!example) example = localEntry.ex || '';
+      pos = localEntry.pos || pos;
     } else {
-      meaning = 'A wonderful English word worth exploring today!';
+      meaning = 'A great word to learn! Look it up in the Dictionary tab for a full definition.';
     }
-    funFact = funFact || 'Did you know? English has over 170,000 words in current use — and new ones are added every year! 📖';
   }
+  if (!funFact) funFact = 'English adds about 1,000 new words every year — keep exploring! 📖';
 
-  const data = { word, phonetic, audioUrl, pos, meaning, example, funFact, emoji, date: new Date().toDateString() };
+    const data = { word, phonetic, audioUrl, pos, meaning, example, funFact, emoji, date: new Date().toDateString() };
   wotdData = data;
 
   // Cache for today
