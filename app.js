@@ -121,6 +121,7 @@ function deletePage(i) {
 function showPage(i) {
   curPage = i;
   wordBoxes = []; extractedText = ''; currentSelectedWords = [];
+  canvasZoom = 1.0; // reset zoom on page change
   clearSelDisplay();
   document.getElementById('pg-lbl').textContent = 'Page ' + (i+1) + ' of ' + pages.length;
   renderThumbs();
@@ -293,6 +294,9 @@ async function savePDF() {
 // ═══════════════════════════════════════════════════════
 
 let wordBoxes = [];        // [{text, x, y, w, h}] in canvas coords
+let canvasZoom  = 1.0;     // current zoom level (1 = fit-to-container)
+let canvasOffX  = 0;       // pan offset X (not used yet, reserved)
+let canvasOffY  = 0;       // pan offset Y
 let canvasScale = 1;       // ratio: canvas CSS px / natural image px
 let isDragging = false;
 let dragStart  = { x: 0, y: 0 };
@@ -532,6 +536,92 @@ function initCanvasEvents() {
     imgCtxMenu.style.top  = Math.min(e.clientY, window.innerHeight - 140) + 'px';
     imgCtxMenu.classList.add('show');
   });
+
+  // ── SCROLL TO ZOOM (canvas only, not the page) ──
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault(); // stop page scrolling
+    const zoomStep = 0.12;
+    const minZoom  = 0.3;
+    const maxZoom  = 5.0;
+
+    if (e.deltaY < 0) {
+      canvasZoom = Math.min(maxZoom, canvasZoom + zoomStep); // scroll up = zoom in
+    } else {
+      canvasZoom = Math.max(minZoom, canvasZoom - zoomStep); // scroll down = zoom out
+    }
+
+    applyCanvasZoom();
+  }, { passive: false }); // passive:false needed to call preventDefault
+}
+
+function applyCanvasZoom() {
+  const canvas = document.getElementById('lesson-canvas');
+  const wrap   = document.getElementById('viewer');
+  if (!canvas) return;
+
+  // Get the natural fit size (100% = fills container)
+  const wrapW = wrap ? wrap.clientWidth  - 16 : canvas.parentElement.clientWidth;
+  const wrapH = wrap ? wrap.clientHeight - 16 : canvas.parentElement.clientHeight;
+  if (!canvas.width || !canvas.height) return;
+
+  const fitScale = Math.min(wrapW / canvas.width, wrapH / canvas.height, 1);
+  const displayW = Math.round(canvas.width  * fitScale * canvasZoom);
+  const displayH = Math.round(canvas.height * fitScale * canvasZoom);
+
+  canvas.style.width  = displayW + 'px';
+  canvas.style.height = displayH + 'px';
+
+  // Show zoom level badge
+  showZoomBadge(Math.round(canvasZoom * 100) + '%');
+}
+
+// Keyboard zoom shortcuts: Ctrl+= zoom in, Ctrl+- zoom out, Ctrl+0 reset
+document.addEventListener('keydown', e => {
+  const canvas = document.getElementById('lesson-canvas');
+  if (!canvas || !canvas.style.display || canvas.style.display === 'none') return;
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === '=' || e.key === '+') {
+      e.preventDefault();
+      canvasZoom = Math.min(5.0, canvasZoom + 0.15);
+      applyCanvasZoom();
+    } else if (e.key === '-') {
+      e.preventDefault();
+      canvasZoom = Math.max(0.3, canvasZoom - 0.15);
+      applyCanvasZoom();
+    } else if (e.key === '0') {
+      e.preventDefault();
+      canvasZoom = 1.0;
+      applyCanvasZoom();
+    }
+  }
+});
+
+// Reset zoom when page changes
+function resetCanvasZoom() {
+  canvasZoom = 1.0;
+  const canvas = document.getElementById('lesson-canvas');
+  if (canvas) { canvas.style.width = ''; canvas.style.height = ''; }
+}
+
+// Transient zoom badge
+let zoomBadgeTimer;
+function showZoomBadge(text) {
+  let badge = document.getElementById('zoom-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'zoom-badge';
+    badge.style.cssText = [
+      'position:fixed','bottom:80px','left:50%','transform:translateX(-50%)',
+      'background:rgba(30,27,75,.82)','color:white','font-family:var(--font)',
+      'font-size:14px','font-weight:800','padding:7px 18px','border-radius:100px',
+      'pointer-events:none','z-index:9999','transition:opacity .3s','opacity:1'
+    ].join(';');
+    document.body.appendChild(badge);
+  }
+  badge.textContent = '🔍 ' + text;
+  badge.style.opacity = '1';
+  clearTimeout(zoomBadgeTimer);
+  zoomBadgeTimer = setTimeout(() => { badge.style.opacity = '0'; }, 1400);
 }
 
 function onWordsSelected(words) {
@@ -758,11 +848,14 @@ function goQuery() {
   const t = document.getElementById('q-field').value.trim();
   if (!t) { toast('⚠️ Please type a word or phrase first'); return; }
   selText = t;
-  if (curTab === 'search') { updateSearchLinks(t); return; }
+  if (curTab === 'search')    { updateSearchLinks(t); return; }
   if (curTab === 'translate') { showTranslateUI(t); return; }
-  if (curTab === 'dict') { lookupDictionary(t); return; }
+  if (curTab === 'dict')      { lookupDictionary(t); return; }
+  if (curTab === 'notebook')  { switchTab('explain'); }
+  // explain or quiz — needs Gemini key
   if (needKey()) return;
-  callGemini(curTab, t);
+  const validTab = (curTab === 'explain') ? 'explain' : 'explain'; // default to explain
+  callGemini(validTab, t);
 }
 
 // ── DICTIONARY LOOKUP (Free Dictionary API — no key needed) ──
@@ -1467,19 +1560,39 @@ function showTranslateUI(text) {
   updateTranslateLinks(text);
 }
 
+
+// ── OPEN EXTERNAL LINKS (force new window, bypass GitHub Pages routing) ──
+function openTranslate() {
+  const enc  = encodeURIComponent(document.getElementById('tr-original')?.textContent || '');
+  const lang = translateTargetLang || 'ta';
+  const url  = 'https://translate.google.com/?sl=auto&tl=' + lang + '&text=' + enc + '&op=translate';
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+function openDeepL() {
+  const enc  = encodeURIComponent(document.getElementById('tr-original')?.textContent || '');
+  const lang = translateTargetLang || 'ta';
+  const url  = 'https://www.deepl.com/translator#auto/' + lang + '/' + enc;
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 function updateTranslateLinks(text) {
-  const enc = encodeURIComponent(text || '');
+  const enc  = encodeURIComponent(text || '');
   const lang = translateTargetLang;
+  const gtUrl   = 'https://translate.google.com/?sl=auto&tl=' + lang + '&text=' + enc + '&op=translate';
+  const deepUrl = 'https://www.deepl.com/translator#auto/' + lang + '/' + enc;
 
-  // Google Translate: auto-detect source, translate to selected target
-  const gtUrl = 'https://translate.google.com/?sl=auto&tl=' + lang + '&text=' + enc + '&op=translate';
+  // Update Google Translate button
   const btn = document.getElementById('tr-open-btn');
-  if (btn) btn.href = gtUrl;
-
-  // DeepL — use direct URL with text if possible
-  const deepLUrl = 'https://www.deepl.com/translator#auto/' + lang + '/' + enc;
+  if (btn) {
+    btn.onclick = (e) => { e.preventDefault(); window.open(gtUrl, '_blank', 'noopener,noreferrer'); };
+    btn.href = gtUrl; // keep href for accessibility
+  }
+  // Update DeepL button
   const deepLBtn = document.getElementById('tr-deepl-btn');
-  if (deepLBtn) deepLBtn.href = deepLUrl;
+  if (deepLBtn) {
+    deepLBtn.onclick = (e) => { e.preventDefault(); window.open(deepUrl, '_blank', 'noopener,noreferrer'); };
+    deepLBtn.href = deepUrl;
+  }
 }
 
 function setTranslateLang(btn) {
