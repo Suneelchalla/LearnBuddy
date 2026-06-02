@@ -25,16 +25,12 @@ function openSubject(name) {
   }
   const titles = {
     lesson: '📖 Lesson Viewer', math: '➗ Mathematics',
-    science: '🔬 Science', language: '🌍 Languages', notebook: '📒 My Notebook',
-    stories: '📖 Stories'
+    science: '🔬 Science', language: '🌍 Languages', notebook: '📒 My Notebook'
   };
   document.getElementById('page-tagline').textContent = titles[name] || 'LearnBuddy';
   if (name === 'math')     { mathTab('calc'); }
   if (name === 'stories')  { if(typeof initStories==='function') initStories(); }
-  if (name === 'science')  {
-    // Use setTimeout so the overridden sciTab (defined later in math.js) is in scope
-    setTimeout(() => { sciTab('body'); }, 0);
-  }
+  if (name === 'science')  { sciTab('periodic'); buildPeriodicTable(); }
   if (name === 'language') { langTab('trans'); }
   if (name === 'notebook') { renderNotebookStandalone(); }
 }
@@ -50,6 +46,8 @@ function loadHomeStats() {
   const h = new Date().getHours();
   const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
   document.getElementById('home-greeting').textContent = g + '! 👋';
+  // Word of the Day
+  initWOTD();
 }
 
 // ── CALCULATOR ───────────────────────────────
@@ -575,7 +573,7 @@ function renderNotebookStandalone() {
 // ── HASH ROUTER ──────────────────────────────
 // Enables Ctrl+click / right-click → open in new tab
 // and browser back/forward navigation
-const VALID_SUBJECTS = ['lesson','math','science','language','notebook','stories'];
+const VALID_SUBJECTS = ['lesson','math','science','language','notebook'];
 
 function handleHashRoute() {
   const hash = window.location.hash.replace('#','').toLowerCase().trim();
@@ -1381,4 +1379,355 @@ function showFoodChain(idx) {
     return `<div style="text-align:center;"><div style="background:${colors[i]};border:2px solid ${borders[i]};border-radius:var(--r-md);padding:14px 18px;display:inline-block;min-width:120px;"><div style="font-size:28px;">${item.split(' ')[0]}</div><div style="font-size:13px;font-weight:800;color:var(--text-h);margin-top:4px;">${item.split(' ').slice(1).join(' ')}</div><div style="font-size:10px;font-weight:700;color:var(--text-m);margin-top:2px;">${labels[i]}</div></div>${i<set.chain.length-1?'<div style="font-size:24px;margin:4px 0;color:var(--text-m)">↓ eats</div>':''}</div>`;
   }).join('');
   el.innerHTML = `<h3 style="font-size:15px;font-weight:900;color:var(--text-h);margin-bottom:12px;">${set.name} Food Chain</h3><div style="display:flex;align-items:center;gap:0;flex-direction:column;">${items}</div><div style="margin-top:14px;padding:12px 14px;background:var(--green-l);border-radius:var(--r-sm);font-size:13px;font-weight:600;color:#15803d;">⚡ Energy flows from Sun → Producer → Consumers. Each level gets ~10% of the energy from the level below.</div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  WORD OF THE DAY
+// ═══════════════════════════════════════════════════════
+
+const WOTD_WORDS = [
+  'curious','brave','ancient','enormous','magnificent','peculiar','adventure',
+  'champion','discover','illuminate','eloquent','harmony','persevere','triumph',
+  'wisdom','radiant','courageous','imagine','transform','graceful','curious',
+  'vibrant','resilient','compassion','inspire','perseverance','diligent','serene',
+  'ambition','flourish','gratitude','integrity','journey','kindness','luminous',
+  'majestic','nurture','optimistic','profound','quest','remarkable','steadfast',
+  'tenacious','unique','vivid','wonder','xenial','yearning','zealous',
+  'accomplish','balance','clarity','dedicate','elevate','focus','genuine',
+  'humble','innovate','jubilant','knowledge','liberate','mindful','noble',
+  'observe','patient','question','reflect','sincere','thoughtful','understand',
+  'volunteer','witness','excel','yearn','zeal','achieve','believe','create',
+  'dream','explore','flourish','grow','hope','improve','justice',
+  'learn','motivate','nourish','open','pursue','rise','study',
+  'thrive','uplift','value','willing','experience','yearn','bloom',
+  'calm','daring','eager','fair','glad','honest','independent',
+  'joyful','keen','lively','mighty','natural','observant','peaceful',
+  'quick','reliable','spirited','thankful','unique','vast','wise'
+];
+
+const WOTD_EMOJIS = {
+  curious:'🔍', brave:'🦁', ancient:'🏛️', enormous:'🐘', magnificent:'👑',
+  peculiar:'🎭', adventure:'⚔️', champion:'🏆', discover:'🔭', illuminate:'💡',
+  eloquent:'🎤', harmony:'🎵', persevere:'💪', triumph:'🥇', wisdom:'🦉',
+  radiant:'☀️', courageous:'🦸', imagine:'💭', transform:'🦋', graceful:'🩰',
+  vibrant:'🌈', resilient:'🌱', compassion:'💙', inspire:'✨', diligent:'📚',
+  serene:'🌊', ambition:'🚀', flourish:'🌺', gratitude:'🙏', integrity:'⚖️',
+  journey:'🗺️', kindness:'🤝', luminous:'🌟', majestic:'🦅', nurture:'🌱',
+  optimistic:'😊', profound:'🌌', quest:'🗡️', remarkable:'🎯', steadfast:'⚓',
+  tenacious:'🦈', unique:'🦄', vivid:'🎨', wonder:'🪄', yearning:'🌠',
+  accomplish:'🏅', balance:'⚖️', clarity:'💎', dedicate:'🎯', elevate:'🚀',
+  focus:'🎯', genuine:'💫', humble:'🌸', innovate:'💡', jubilant:'🎉',
+  knowledge:'📖', liberate:'🦅', mindful:'🧘', noble:'👑', observe:'🔭',
+  patient:'⏳', question:'❓', reflect:'🪞', sincere:'💝', thoughtful:'🤔',
+  thrive:'🌿', bloom:'🌸', dream:'🌙', explore:'🗺️', grow:'🌱',
+  hope:'🌈', learn:'📚', rise:'⬆️', study:'✏️', achieve:'🏆', believe:'⭐'
+};
+
+let wotdData = null; // current word data
+let wotdQuizData = null;
+
+// ── Pick today's word deterministically (same word all day) ──
+function getWOTDWord() {
+  const today = new Date();
+  const seed  = today.getFullYear() * 10000 + (today.getMonth()+1) * 100 + today.getDate();
+  return WOTD_WORDS[seed % WOTD_WORDS.length];
+}
+
+// ── Main init — called from loadHomeStats ──
+async function initWOTD() {
+  const section = document.getElementById('wotd-section');
+  if (!section) return;
+
+  // Show date
+  const dateEl = document.getElementById('wotd-date');
+  if (dateEl) {
+    const d = new Date();
+    dateEl.textContent = d.toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
+  }
+
+  // Check cache — same word all day
+  const today = new Date().toDateString();
+  try {
+    const cached = JSON.parse(localStorage.getItem('lb_wotd') || 'null');
+    if (cached && cached.date === today && cached.word) {
+      wotdData = cached;
+      renderWOTD(cached);
+      return;
+    }
+  } catch {}
+
+  const word = getWOTDWord();
+  await fetchAndRenderWOTD(word);
+}
+
+async function fetchAndRenderWOTD(word) {
+  showWOTDLoading(true);
+
+  // Step 1: Try Free Dictionary API for phonetic + basic def
+  let phonetic = '', audioUrl = '', pos = 'noun';
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 4000);
+    const res  = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), { signal: ctrl.signal });
+    if (res.ok) {
+      const data = await res.json();
+      const entry = data[0];
+      (entry.phonetics || []).forEach(ph => {
+        if (!phonetic && ph.text)  phonetic = ph.text;
+        if (!audioUrl && ph.audio) audioUrl = ph.audio.startsWith('//') ? 'https:' + ph.audio : ph.audio;
+      });
+      if (entry.meanings?.[0]?.partOfSpeech) pos = entry.meanings[0].partOfSpeech;
+    }
+  } catch {}
+
+  // Step 2: Always use Gemini for child-friendly definition, example, fun fact, emoji
+  // If no API key, use a simple offline fallback
+  const apiKey = typeof getKey === 'function' ? getKey() : '';
+  let meaning = '', example = '', funFact = '', emoji = WOTD_EMOJIS[word] || '📚';
+
+  if (apiKey && apiKey.length > 10) {
+    try {
+      const prompt = `For the English word "${word}", create a child-friendly entry for ages 8-12.
+Return ONLY valid JSON (no markdown):
+{
+  "pos": "noun/verb/adjective/etc",
+  "phonetic": "/phonetic/ (if you know it)",
+  "meaning": "Simple 1-2 sentence definition a child will understand easily",
+  "example": "A fun, relatable example sentence using the word",
+  "fun_fact": "One surprising, amazing or funny fact about this word or concept — something a child would love to share with friends",
+  "emoji": "The single most fitting emoji for this word"
+}`;
+      const resp = await fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents:[{parts:[{text: prompt}]}], generationConfig:{temperature:0.7, maxOutputTokens:400} }) }
+      );
+      if (resp.ok) {
+        const d = await resp.json();
+        let raw = d.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+        raw = raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
+        const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+        if (s >= 0 && e > s) raw = raw.slice(s, e+1);
+        const parsed = JSON.parse(raw);
+        if (parsed.meaning) meaning  = parsed.meaning;
+        if (parsed.example) example  = parsed.example;
+        if (parsed.fun_fact) funFact = parsed.fun_fact;
+        if (parsed.emoji)    emoji   = parsed.emoji;
+        if (parsed.pos)      pos     = parsed.pos;
+        if (parsed.phonetic && !phonetic) phonetic = parsed.phonetic;
+      }
+    } catch {}
+  }
+
+  // Fallback if Gemini unavailable
+  if (!meaning) {
+    const localEntry = typeof LOCAL_DICT !== 'undefined' ? LOCAL_DICT[word.toLowerCase()] : null;
+    if (localEntry) {
+      meaning = localEntry.def;
+      example = localEntry.ex || '';
+      pos     = localEntry.pos || pos;
+    } else {
+      meaning = 'A wonderful English word worth exploring today!';
+    }
+    funFact = funFact || 'Did you know? English has over 170,000 words in current use — and new ones are added every year! 📖';
+  }
+
+  const data = { word, phonetic, audioUrl, pos, meaning, example, funFact, emoji, date: new Date().toDateString() };
+  wotdData = data;
+
+  // Cache for today
+  try { localStorage.setItem('lb_wotd', JSON.stringify(data)); } catch {}
+
+  renderWOTD(data);
+}
+
+function renderWOTD(data) {
+  showWOTDLoading(false);
+  const content = document.getElementById('wotd-content');
+  if (!content) return;
+  content.style.display = '';
+
+  document.getElementById('wotd-word').textContent     = data.word;
+  document.getElementById('wotd-pos').textContent      = data.pos;
+  document.getElementById('wotd-phonetic').textContent = data.phonetic || '';
+  document.getElementById('wotd-meaning').textContent  = data.meaning;
+  document.getElementById('wotd-example').textContent  = data.example ? '"' + data.example + '"' : '';
+  document.getElementById('wotd-fact').textContent     = data.funFact || '';
+  document.getElementById('wotd-emoji').textContent    = data.emoji || '📚';
+
+  const factWrap = document.getElementById('wotd-fact-wrap');
+  if (factWrap) factWrap.style.display = data.funFact ? '' : 'none';
+
+  const speakBtn = document.getElementById('wotd-speak');
+  if (speakBtn) speakBtn.style.display = 'inline';
+
+  // Hide quiz when new word loads
+  const qw = document.getElementById('wotd-quiz-wrap');
+  if (qw) qw.style.display = 'none';
+  wotdQuizData = null;
+
+  // Animate the word in
+  const wordEl = document.getElementById('wotd-word');
+  if (wordEl) { wordEl.style.opacity = '0'; wordEl.style.transform = 'translateY(8px)';
+    requestAnimationFrame(() => { wordEl.style.transition = 'all .4s ease'; wordEl.style.opacity = '1'; wordEl.style.transform = 'translateY(0)'; }); }
+}
+
+function showWOTDLoading(show) {
+  const loading = document.getElementById('wotd-loading');
+  const content = document.getElementById('wotd-content');
+  if (loading) loading.style.display = show ? '' : 'none';
+  if (content) content.style.display = show ? 'none' : '';
+}
+
+// ── Speak the word ──
+function speakWOTD() {
+  if (!wotdData) return;
+  // Try audio file first, fall back to TTS
+  const btn = document.getElementById('wotd-speak');
+  if (wotdData.audioUrl) {
+    const audio = new Audio(wotdData.audioUrl);
+    audio.onplay  = () => { if (btn) btn.classList.add('playing'); };
+    audio.onended = () => { if (btn) btn.classList.remove('playing'); };
+    audio.onerror = () => { ttsSpeak(wotdData.word, btn); };
+    audio.play().catch(() => ttsSpeak(wotdData.word, btn));
+  } else {
+    ttsSpeak(wotdData.word, btn);
+  }
+}
+function ttsSpeak(word, btn) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(word);
+  u.rate = 0.8; u.lang = 'en-US';
+  u.onstart = () => { if (btn) btn.classList.add('playing'); };
+  u.onend   = () => { if (btn) btn.classList.remove('playing'); };
+  speechSynthesis.speak(u);
+}
+
+// ── Save to Notebook ──
+function saveWOTD() {
+  if (!wotdData) return;
+  const btn = document.querySelector('.wotd-save');
+  if (typeof saveWord === 'function') {
+    saveWord(wotdData.word);
+    if (btn) { btn.textContent = '✅ Saved!'; btn.style.background = '#dcfce7'; btn.style.borderColor = '#86efac'; setTimeout(() => { btn.textContent = '📒 Add to Notebook'; btn.style.background = ''; btn.style.borderColor = ''; }, 2500); }
+  }
+}
+
+// ── Explore in Lesson Viewer ──
+function exploreWOTD() {
+  if (!wotdData) return;
+  if (typeof openSubject === 'function') openSubject('lesson');
+  setTimeout(() => {
+    const qf = document.getElementById('q-field');
+    if (qf) { qf.value = wotdData.word; }
+    if (typeof lookupDictionary === 'function') lookupDictionary(wotdData.word);
+    if (typeof switchTab === 'function') switchTab('dict');
+  }, 150);
+}
+
+// ── Quick Quiz ──
+async function quizWOTD() {
+  if (!wotdData) return;
+  const qw   = document.getElementById('wotd-quiz-wrap');
+  const qBtn = document.querySelector('.wotd-quiz');
+
+  // Toggle off if already open
+  if (qw && qw.style.display !== 'none') { qw.style.display = 'none'; return; }
+  if (qw) qw.style.display = '';
+
+  const qEl  = document.getElementById('wotd-quiz-q');
+  const opts = document.getElementById('wotd-quiz-opts');
+  const fb   = document.getElementById('wotd-quiz-fb');
+  if (qEl)  qEl.textContent  = '⏳ Building your quiz…';
+  if (opts) opts.innerHTML   = '';
+  if (fb)   fb.textContent   = '';
+
+  const apiKey = typeof getKey === 'function' ? getKey() : '';
+  if (!apiKey || apiKey.length < 10) {
+    // Fallback: simple "which meaning is right" quiz using the definition
+    buildFallbackQuiz();
+    return;
+  }
+
+  try {
+    const prompt = `Create a fun multiple-choice quiz for a child aged 8-12 about the word "${wotdData.word}".
+The correct answer must test understanding of the word's meaning.
+Return ONLY valid JSON (no markdown):
+{"question":"…","options":["A","B","C","D"],"correct":0,"explanation":"Brief encouraging explanation"}`;
+    const resp = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey,
+      { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.8,maxOutputTokens:300} }) }
+    );
+    if (!resp.ok) throw new Error('api');
+    const d = await resp.json();
+    let raw = d.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    raw = raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
+    const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
+    if (s >= 0 && e > s) raw = raw.slice(s, e+1);
+    wotdQuizData = JSON.parse(raw);
+    renderWOTDQuiz(wotdQuizData);
+  } catch { buildFallbackQuiz(); }
+}
+
+function buildFallbackQuiz() {
+  if (!wotdData) return;
+  // Pick 3 distractors from the word list
+  const distractors = WOTD_WORDS.filter(w => w !== wotdData.word)
+    .sort(() => Math.random() - .5).slice(0, 3);
+  const correct = Math.floor(Math.random() * 4);
+  const options = [...distractors];
+  options.splice(correct, 0, wotdData.word);
+  wotdQuizData = {
+    question: '🤔 Which word means: "' + wotdData.meaning.slice(0, 80) + (wotdData.meaning.length > 80 ? '…"' : '"'),
+    options,
+    correct,
+    explanation: 'The answer is "' + wotdData.word + '" — ' + wotdData.meaning
+  };
+  renderWOTDQuiz(wotdQuizData);
+}
+
+function renderWOTDQuiz(quiz) {
+  const qEl  = document.getElementById('wotd-quiz-q');
+  const opts = document.getElementById('wotd-quiz-opts');
+  const fb   = document.getElementById('wotd-quiz-fb');
+  if (!qEl || !opts) return;
+  if (qEl)  qEl.textContent = quiz.question || '';
+  if (fb)   fb.textContent  = '';
+  opts.innerHTML = (quiz.options || []).map((opt, i) =>
+    `<button class="wotd-opt" onclick="answerWOTD(this,${i},${quiz.correct},'${(quiz.explanation||'').replace(/'/g,"\\'")}')">
+      <strong style="margin-right:8px;color:#6366f1">${String.fromCharCode(65+i)}.</strong>${opt}
+    </button>`
+  ).join('');
+}
+
+function answerWOTD(btn, chosen, correct, explanation) {
+  const opts = document.getElementById('wotd-quiz-opts');
+  if (!opts) return;
+  opts.querySelectorAll('.wotd-opt').forEach((b, i) => {
+    b.disabled = true;
+    if (i === correct) b.classList.add('correct');
+    else if (i === chosen) b.classList.add('wrong');
+  });
+  const fb = document.getElementById('wotd-quiz-fb');
+  if (fb) {
+    const win = chosen === correct;
+    fb.innerHTML = (win ? '🎉 <strong>Correct!</strong> ' : '❌ <strong>Not quite!</strong> ') + explanation;
+    fb.style.color = win ? '#15803d' : '#be123c';
+    // Retry button
+    fb.innerHTML += '<br><button onclick="quizWOTD()" style="margin-top:8px;padding:6px 14px;background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:8px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;color:#4f6ef7;">🔄 Try another question</button>';
+  }
+}
+
+// ── Refresh: pick a random new word (not today's default) ──
+function refreshWOTD() {
+  const current = wotdData?.word || '';
+  let newWord;
+  do { newWord = WOTD_WORDS[Math.floor(Math.random() * WOTD_WORDS.length)]; }
+  while (newWord === current);
+  wotdData = null;
+  const content = document.getElementById('wotd-content');
+  if (content) content.style.display = 'none';
+  fetchAndRenderWOTD(newWord);
 }
