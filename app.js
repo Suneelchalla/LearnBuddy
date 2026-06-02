@@ -27,14 +27,62 @@ function checkKey() {
   apiStatus.className = 'api-status' + (ok ? ' ok' : k ? ' bad' : '');
 }
 function getKey() { return apiInput.value.trim(); }
-function needKey() {
-  if (!getKey() || getKey().length < 10) {
-    toast('⚠️ Please paste your Gemini API key in the top bar first\n(Get one free at aistudio.google.com)', 4000);
-    apiInput.focus();
-    return true;
-  }
-  return false;
+let _pendingActionAfterKey = null; // stores the callback to run after key is saved
+
+function needKey(pendingAction) {
+  if (getKey() && getKey().length >= 10) return false; // key already set — all good
+  // Store the action to resume after user saves their key
+  _pendingActionAfterKey = pendingAction || null;
+  openApiModal();
+  return true;
 }
+
+// ── API KEY MODAL ──
+function openApiModal() {
+  const modal = document.getElementById('api-key-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  // Pre-fill if there's already a partial key
+  const inp = document.getElementById('modal-api-input');
+  if (inp) { inp.value = apiInput.value.trim(); onModalKeyInput(inp); inp.focus(); }
+}
+function closeApiModal() {
+  const modal = document.getElementById('api-key-modal');
+  if (modal) modal.style.display = 'none';
+  _pendingActionAfterKey = null;
+}
+function onModalKeyInput(inp) {
+  const v = inp.value.trim();
+  const ok = v.length > 15 && (v.startsWith('AIza') || v.startsWith('AI'));
+  const status = document.getElementById('modal-key-status');
+  const btn    = document.getElementById('modal-save-btn');
+  if (status) {
+    status.textContent = ok ? '✅ Key looks valid!' : v.length > 4 ? '⚠️ Key should start with "AIza…"' : '';
+    status.style.color = ok ? '#16a34a' : '#d97706';
+  }
+  if (btn) btn.style.opacity = ok ? '1' : '0.6';
+}
+function saveApiKey() {
+  const inp = document.getElementById('modal-api-input');
+  const v   = inp ? inp.value.trim() : '';
+  if (!v || v.length < 10) { toast('⚠️ Please paste a valid Gemini API key'); return; }
+  // Save to main header input + localStorage
+  apiInput.value = v;
+  try { localStorage.setItem('lb_key', v); } catch {}
+  checkKey();
+  closeApiModal();
+  toast('✅ API key saved! Running your request…', 2500);
+  // Resume the action that triggered the modal
+  if (typeof _pendingActionAfterKey === 'function') {
+    setTimeout(_pendingActionAfterKey, 300);
+    _pendingActionAfterKey = null;
+  }
+}
+// Close modal on backdrop click
+document.addEventListener('click', e => {
+  const modal = document.getElementById('api-key-modal');
+  if (modal && e.target === modal) closeApiModal();
+});
 
 // ── FILE HANDLING ──
 function handleFiles(files) {
@@ -825,7 +873,8 @@ function useSelectedText() {
   if (!t) return;
   if (curTab === 'search') { updateSearchLinks(t); return; }
   if (curTab === 'notebook') switchTab('explain');
-  if (needKey()) return;
+  const _t1 = t, _tab1 = curTab;
+  if (needKey(() => callGemini(_tab1, _t1))) return;
   callGemini(curTab, t);
 }
 
@@ -887,7 +936,8 @@ function clickWord(word) {
   if (curTab === 'translate') { showTranslateUI(word); return; }
   if (curTab === 'dict') { lookupDictionary(word); return; }
   if (curTab === 'notebook') switchTab('explain');
-  if (needKey()) return;
+  const _w1 = word, _tab2 = curTab;
+  if (needKey(() => callGemini(_tab2, _w1))) return;
   callGemini(curTab, word);
 }
 
@@ -905,7 +955,7 @@ function imgCtx(type) {
   hideImgCtx();
   if (type === 'read')    extractOCR();
   if (type === 'pdf')     savePDF();
-  if (type === 'explain') { if (!needKey()) callGeminiWithImage(); }
+  if (type === 'explain') { if (!needKey(() => callGeminiWithImage())) callGeminiWithImage(); }
 }
 
 // ── TEXT SELECTION POPUP ──
@@ -940,7 +990,8 @@ function selAct(type) {
   if (type === 'search') { switchTab('search'); updateSearchLinks(t); return; }
   if (type === 'translate') { switchTab('translate'); document.getElementById('q-field').value = t; showTranslateUI(t); return; }
   if (type === 'dict') { switchTab('dict'); document.getElementById('q-field').value = t; lookupDictionary(t); return; }
-  if (needKey()) return;
+  const _t2 = t, _type2 = type;
+  if (needKey(() => { switchTab(_type2); document.getElementById('q-field').value = _t2; callGemini(_type2, _t2); })) return;
   switchTab(type);
   document.getElementById('q-field').value = t;
   callGemini(type, t);
@@ -968,8 +1019,15 @@ function switchTab(tab) {
     updateSearchLinks(document.getElementById('q-field').value || '');
   } else if (tab === 'translate') {
     document.getElementById('translate-area').style.display = 'flex';
-    const cur = document.getElementById('q-field').value.trim();
-    if (cur) showTranslateUI(cur);
+    // Read tr-original (already set by showTranslateUI before it calls switchTab)
+    // to avoid infinite recursion. Only call updateTranslateLinks, not showTranslateUI again.
+    const orig = document.getElementById('tr-original');
+    const origText = orig && orig.textContent !== 'Type or select text to translate' ? orig.textContent : '';
+    const cur = origText || document.getElementById('q-field').value.trim() || selText || '';
+    if (cur) {
+      if (orig && !origText) orig.textContent = cur;
+      updateTranslateLinks(cur);
+    }
   } else if (tab === 'dict') {
     document.getElementById('dict-area').style.display = 'flex';
     const cur = document.getElementById('q-field').value.trim();
@@ -1011,9 +1069,9 @@ function goQuery() {
   if (curTab === 'dict')      { lookupDictionary(t); return; }
   if (curTab === 'notebook')  { switchTab('explain'); }
   // explain or quiz — needs Gemini key
-  if (needKey()) return;
-  const validTab = (curTab === 'explain') ? 'explain' : 'explain'; // default to explain
-  callGemini(validTab, t);
+  const _t3 = t, _tab3 = curTab === 'explain' ? 'explain' : 'explain';
+  if (needKey(() => callGemini(_tab3, _t3))) return;
+  callGemini(_tab3, t);
 }
 
 // ── DICTIONARY LOOKUP (Free Dictionary API — no key needed) ──
@@ -1707,15 +1765,15 @@ async function showDictCacheInfo() {
 let translateTargetLang = localStorage.getItem('lb_translang') || 'ta'; // restored or default Tamil
 
 function showTranslateUI(text) {
-  // Switch to translate tab
+  // Set the displayed text FIRST — before switchTab() runs (which reads tr-original)
+  const orig = document.getElementById('tr-original');
+  if (orig) orig.textContent = (text && text.trim()) ? text.trim() : 'Type or select text to translate';
+
+  // Now switch to translate tab (safe — tr-original is already populated)
   switchTab('translate');
 
-  // Show the text in the panel
-  const orig = document.getElementById('tr-original');
-  if (orig) orig.textContent = text || 'Type or select text to translate';
-
-  // Build Google Translate URL
-  updateTranslateLinks(text);
+  // Build Google Translate URL with the real text
+  if (text && text.trim()) updateTranslateLinks(text.trim());
 }
 
 
@@ -1732,29 +1790,13 @@ function openTranslate() {
   if (btn) btn.href = url;
   window.open(url, '_blank', 'noopener,noreferrer');
 }
-function openDeepL() {
-  const raw = document.getElementById('tr-original')?.textContent || '';
-  const text = (raw && raw !== 'Type or select text to translate') ? raw : selText;
-  const enc  = encodeURIComponent(text || '');
-  if (!enc) { toast('⚠️ Select or type text to translate first'); return; }
-  const lang = translateTargetLang || 'ta';
-  const url  = 'https://www.deepl.com/translator#auto/' + lang + '/' + enc;
-  const btn  = document.getElementById('tr-deepl-btn');
-  if (btn) btn.href = url;
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
 
 function updateTranslateLinks(text) {
   const enc  = encodeURIComponent(text || '');
   const lang = translateTargetLang || 'ta';
-  const gtUrl   = enc ? 'https://translate.google.com/?sl=auto&tl=' + lang + '&text=' + enc + '&op=translate' : '#';
-  const deepUrl = enc ? 'https://www.deepl.com/translator#auto/' + lang + '/' + enc : '#';
-
-  // Set href directly on anchor tags — direct user click on <a> is never popup-blocked
+  const gtUrl = enc ? 'https://translate.google.com/?sl=auto&tl=' + lang + '&text=' + enc + '&op=translate' : '#';
   const btn = document.getElementById('tr-open-btn');
   if (btn) btn.href = gtUrl;
-  const deepLBtn = document.getElementById('tr-deepl-btn');
-  if (deepLBtn) deepLBtn.href = deepUrl;
 }
 
 function setTranslateLang(btn) {
@@ -1919,7 +1961,7 @@ function showResult(type, word, data) {
         '<div class="tblock"><div class="tblock-val translated">' + (data.translation || 'Not available') + '</div></div></div>' +
       '<div class="sec"><div class="sec-label">Translate More Online</div><div class="ext-links">' +
         '<a class="ext-link g" href="https://translate.google.com/?sl=auto&tl=' + (translateTargetLang||'ta') + '&text=' + encodeURIComponent(word) + '&op=translate" target="_blank">🌐 Google Translate</a>' +
-        '<a class="ext-link w" href="https://www.deepl.com/translator" target="_blank">🔤 DeepL</a>' +
+        '<a class="ext-link w" href="https://en.wiktionary.org/wiki/' + encodeURIComponent(word) + '" target="_blank">📖 Wiktionary</a>' +
       '</div></div>';
 
   } else if (type === 'quiz') {
