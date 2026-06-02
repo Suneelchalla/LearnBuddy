@@ -22,8 +22,10 @@
   <button class="home-btn" id="home-btn" onclick="goHome()" title="Home" style="display:none">
     ← Home
   </button>
-  <div class="logo-mark">📚</div>
-  <div class="logo-text">Learn<span>Buddy</span></div>
+  <a href="#" onclick="goHome();return false;" style="display:flex;align-items:center;gap:10px;text-decoration:none;" title="Go to Home">
+    <div class="logo-mark">📚</div>
+    <div class="logo-text">Learn<span>Buddy</span></div>
+  </a>
   <div class="logo-tagline" id="page-tagline">Smart Learning Platform</div>
   <div class="hdr-spacer"></div>
   <div class="api-zone">
@@ -51,7 +53,7 @@
   <div class="subjects-grid">
 
     <!-- 📖 Lesson Viewer -->
-    <div class="subject-card" onclick="openSubject('lesson')" style="--card-color:#4f6ef7;--card-bg:linear-gradient(135deg,#eef2ff,#e8ecff)">
+    <a class="subject-card" href="#lesson" onclick="openSubject('lesson');return false;" style="--card-color:#4f6ef7;--card-bg:linear-gradient(135deg,#eef2ff,#e8ecff);text-decoration:none;color:inherit;">
       <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#4f6ef7,#8b5cf6)">📖</div>
       <div class="sc-content">
         <div class="sc-title">Lesson Viewer</div>
@@ -64,10 +66,10 @@
         </div>
       </div>
       <div class="sc-arrow">→</div>
-    </div>
+    </a>
 
     <!-- ➗ Mathematics -->
-    <div class="subject-card" onclick="openSubject('math')" style="--card-color:#f59e0b;--card-bg:linear-gradient(135deg,#fffbeb,#fef3c7)">
+    <a class="subject-card" href="#math" onclick="openSubject('math');return false;" style="--card-color:#f59e0b;--card-bg:linear-gradient(135deg,#fffbeb,#fef3c7);text-decoration:none;color:inherit;">
       <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">➗</div>
       <div class="sc-content">
         <div class="sc-title">Mathematics</div>
@@ -80,10 +82,10 @@
         </div>
       </div>
       <div class="sc-arrow">→</div>
-    </div>
+    </a>
 
     <!-- 🔬 Science -->
-    <div class="subject-card" onclick="openSubject('science')" style="--card-color:#10b981;--card-bg:linear-gradient(135deg,#ecfdf5,#d1fae5)">
+    <a class="subject-card" href="#science" onclick="openSubject('science');return false;" style="--card-color:#10b981;--card-bg:linear-gradient(135deg,#ecfdf5,#d1fae5);text-decoration:none;color:inherit;">
       <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#10b981,#06b6d4)">🔬</div>
       <div class="sc-content">
         <div class="sc-title">Science</div>
@@ -95,10 +97,10 @@
         </div>
       </div>
       <div class="sc-arrow">→</div>
-    </div>
+    </a>
 
     <!-- 🌍 Languages -->
-    <div class="subject-card" onclick="openSubject('language')" style="--card-color:#8b5cf6;--card-bg:linear-gradient(135deg,#f5f3ff,#ede9fe)">
+    <a class="subject-card" href="#language" onclick="openSubject('language');return false;" style="--card-color:#8b5cf6;--card-bg:linear-gradient(135deg,#f5f3ff,#ede9fe);text-decoration:none;color:inherit;">
       <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#8b5cf6,#ec4899)">🌍</div>
       <div class="sc-content">
         <div class="sc-title">Languages</div>
@@ -110,10 +112,10 @@
         </div>
       </div>
       <div class="sc-arrow">→</div>
-    </div>
+    </a>
 
     <!-- 📒 My Notebook -->
-    <div class="subject-card" onclick="openSubject('notebook')" style="--card-color:#f43f5e;--card-bg:linear-gradient(135deg,#fff1f2,#ffe4e6)">
+    <a class="subject-card" href="#notebook" onclick="openSubject('notebook');return false;" style="--card-color:#f43f5e;--card-bg:linear-gradient(135deg,#fff1f2,#ffe4e6);text-decoration:none;color:inherit;">
       <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#f43f5e,#f97316)">📒</div>
       <div class="sc-content">
         <div class="sc-title">My Notebook</div>
@@ -125,7 +127,7 @@
         </div>
       </div>
       <div class="sc-arrow">→</div>
-    </div>
+    </a>
 
   </div><!-- end subjects-grid -->
 
