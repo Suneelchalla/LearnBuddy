@@ -1,0 +1,468 @@
+/* ═══════════════════════════════════════════════
+   LearnBuddy — Home Dashboard & Subject Workspaces
+═══════════════════════════════════════════════ */
+
+/* ── Home screen ── */
+#home-screen {
+  height: calc(100vh - 62px);
+  overflow-y: auto;
+  background: var(--bg-page);
+  padding-bottom: 32px;
+}
+
+.home-hero {
+  background: linear-gradient(135deg, #4f6ef7 0%, #8b5cf6 50%, #ec4899 100%);
+  padding: 36px 32px 32px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.home-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='10'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.home-hero-inner { position: relative; z-index: 1; }
+.home-greeting {
+  font-size: 16px; font-weight: 700;
+  color: rgba(255,255,255,.85);
+  margin-bottom: 8px;
+}
+.home-title {
+  font-size: 28px; font-weight: 900;
+  color: white; margin-bottom: 8px;
+  line-height: 1.2; letter-spacing: -.5px;
+}
+.home-sub {
+  font-size: 14px; font-weight: 600;
+  color: rgba(255,255,255,.75);
+}
+
+/* ── Subject cards grid ── */
+.subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+  padding: 28px 28px 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.subject-card {
+  background: var(--white);
+  border: 2.5px solid var(--border);
+  border-radius: 20px;
+  padding: 22px 20px 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: all .22s cubic-bezier(.34,1.56,.64,1);
+  position: relative;
+  overflow: hidden;
+}
+.subject-card::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--card-bg);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.subject-card:hover {
+  border-color: var(--card-color);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(0,0,0,.12), 0 0 0 4px rgba(79,110,247,.08);
+}
+.subject-card:hover::before { opacity: 1; }
+.subject-card:active { transform: translateY(-2px) scale(.98); }
+
+.sc-icon-wrap {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+  box-shadow: 0 4px 14px rgba(0,0,0,.2);
+  transition: transform .2s;
+}
+.subject-card:hover .sc-icon-wrap { transform: scale(1.1) rotate(-5deg); }
+
+.sc-content { flex: 1; min-width: 0; position: relative; z-index: 1; }
+.sc-title {
+  font-size: 17px; font-weight: 900;
+  color: var(--text-h); margin-bottom: 6px;
+}
+.sc-desc {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-m); line-height: 1.6;
+  margin-bottom: 10px;
+}
+.sc-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.sc-tag {
+  font-size: 10px; font-weight: 800;
+  letter-spacing: .04em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 20px;
+  background: var(--bg-page); color: var(--text-m);
+  border: 1.5px solid var(--border);
+}
+.subject-card:hover .sc-tag {
+  background: white;
+  border-color: var(--card-color);
+  color: var(--card-color);
+}
+
+.sc-arrow {
+  font-size: 20px; font-weight: 900;
+  color: var(--text-l);
+  position: relative; z-index: 1;
+  transition: all .2s;
+  align-self: center;
+  flex-shrink: 0;
+}
+.subject-card:hover .sc-arrow {
+  color: var(--card-color);
+  transform: translateX(4px);
+}
+
+/* ── Home stats ── */
+.home-stats {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; flex-wrap: wrap;
+  padding: 20px 28px 0;
+  max-width: 1200px; margin: 0 auto;
+}
+.home-stat { display: flex; align-items: center; gap: 6px; }
+.home-stat-n {
+  font-size: 22px; font-weight: 900;
+  color: var(--blue-d);
+}
+.home-stat-l {
+  font-size: 12px; font-weight: 600;
+  color: var(--text-m);
+}
+.home-stat-sep {
+  color: var(--border-m); font-size: 16px;
+  padding: 0 4px;
+}
+
+/* ── Home/Back button in header ── */
+.home-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 14px; height: 36px;
+  border-radius: var(--r-sm);
+  border: 2px solid var(--border);
+  background: var(--white);
+  color: var(--text-m);
+  font-family: var(--font);
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: all .16s;
+  margin-right: 6px; white-space: nowrap;
+}
+.home-btn:hover {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--blue-l);
+}
+
+/* ── Workspace container ── */
+.workspace {
+  height: calc(100vh - 62px);
+  overflow: hidden;
+}
+
+/* ── Subject workspace layout (sidebar + content) ── */
+.subject-workspace {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.sw-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  background: var(--white);
+  border-right: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 10px;
+  gap: 4px;
+  overflow-y: auto;
+}
+.sw-nav-title {
+  font-size: 13px; font-weight: 900;
+  color: var(--text-h);
+  padding: 6px 10px 12px;
+  border-bottom: 1.5px solid var(--border);
+  margin-bottom: 8px;
+}
+.sw-nav-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; border-radius: var(--r-sm);
+  border: none; background: transparent;
+  font-family: var(--font); font-size: 13px; font-weight: 700;
+  color: var(--text-m); cursor: pointer;
+  transition: all .14s; text-align: left;
+  width: 100%;
+}
+.sw-nav-btn:hover { background: var(--bg-page); color: var(--text-h); }
+.sw-nav-btn.active {
+  background: var(--blue-l);
+  color: var(--blue-d);
+  border-left: 3px solid var(--blue);
+}
+
+.sw-content {
+  flex: 1; overflow-y: auto;
+  padding: 24px 28px;
+  background: var(--bg-page);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.sw-content::-webkit-scrollbar { width: 5px; }
+.sw-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── Math panel base ── */
+.math-panel { max-width: 680px; }
+.math-title {
+  font-size: 20px; font-weight: 900;
+  color: var(--text-h); margin-bottom: 20px;
+}
+
+/* ── Calculator ── */
+.calc-display {
+  background: var(--text-h);
+  color: white;
+  font-size: 36px; font-weight: 300;
+  text-align: right;
+  padding: 20px 22px 14px;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  min-height: 80px;
+  word-break: break-all;
+  letter-spacing: -1px;
+}
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  background: #ddd;
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.calc-btn {
+  padding: 18px 10px;
+  border: none;
+  font-family: var(--font); font-size: 18px; font-weight: 700;
+  cursor: pointer; transition: all .1s;
+  background: var(--white); color: var(--text-h);
+}
+.calc-btn:hover { background: #f0f0f0; }
+.calc-btn:active { background: #e0e0e0; transform: scale(.95); }
+.calc-btn.wide { grid-column: span 2; }
+.calc-btn.op { background: #f0f4ff; color: var(--blue-d); }
+.calc-btn.op:hover { background: #dde4ff; }
+.calc-btn.eq { background: var(--blue); color: white; }
+.calc-btn.eq:hover { background: var(--blue-d); }
+.calc-btn.danger { background: #fee2e2; color: var(--rose); }
+.calc-btn.danger:hover { background: #fca5a5; }
+.calc-history {
+  font-size: 12px; color: var(--text-m);
+  font-weight: 600; max-height: 80px;
+  overflow-y: auto; padding: 4px 0;
+}
+.calc-history-item { padding: 3px 0; border-bottom: 1px solid var(--border); }
+
+/* ── Times tables ── */
+.times-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.tt-cell {
+  background: var(--white); border: 2px solid var(--border);
+  border-radius: var(--r-sm); padding: 10px 6px;
+  text-align: center; font-size: 13px; font-weight: 700;
+  color: var(--text-b);
+}
+.tt-cell.header {
+  background: var(--blue); color: white;
+  border-color: var(--blue);
+}
+
+/* ── Geometry ── */
+.geo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.geo-card {
+  background: var(--white); border: 2px solid var(--border);
+  border-radius: var(--r-md); padding: 18px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.geo-icon {
+  font-size: 32px; text-align: center;
+  margin-bottom: 4px;
+}
+.geo-name {
+  font-size: 15px; font-weight: 800;
+  color: var(--text-h); text-align: center;
+  margin-bottom: 6px;
+}
+.geo-card label {
+  display: flex; flex-direction: column; gap: 3px;
+  font-size: 12px; font-weight: 700; color: var(--text-m);
+}
+.geo-inp {
+  border: 2px solid var(--border); border-radius: var(--r-sm);
+  padding: 7px 10px; font-family: var(--font);
+  font-size: 14px; font-weight: 600; outline: none;
+  transition: border-color .15s;
+}
+.geo-inp:focus { border-color: var(--blue); }
+.geo-result {
+  font-size: 13px; font-weight: 700;
+  color: var(--blue-d); background: var(--blue-l);
+  border-radius: var(--r-sm); padding: 10px 12px;
+  min-height: 44px; line-height: 1.6;
+  display: none;
+}
+
+/* ── Unit Converter ── */
+.conv-tabs {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 16px;
+}
+.conv-tab {
+  padding: 7px 14px; border-radius: 20px;
+  border: 2px solid var(--border); background: var(--white);
+  font-family: var(--font); font-size: 12px; font-weight: 700;
+  color: var(--text-m); cursor: pointer; transition: all .14s;
+}
+.conv-tab:hover { border-color: var(--border-m); color: var(--text-h); }
+.conv-tab.active { background: var(--blue); border-color: var(--blue); color: white; }
+.conv-inp {
+  border: 2px solid var(--border); border-radius: var(--r-sm);
+  padding: 10px 14px; font-family: var(--font);
+  font-size: 15px; font-weight: 600; outline: none;
+  min-width: 120px; transition: border-color .15s;
+}
+.conv-inp:focus { border-color: var(--blue); }
+.conv-sel {
+  border: 2px solid var(--border); border-radius: var(--r-sm);
+  padding: 10px 12px; font-family: var(--font);
+  font-size: 14px; font-weight: 600; outline: none;
+  background: var(--white); cursor: pointer;
+}
+.conv-result {
+  font-size: 22px; font-weight: 900;
+  color: var(--blue-d); margin: 12px 0;
+  min-height: 36px;
+}
+.conv-all-table {
+  background: var(--white); border: 2px solid var(--border);
+  border-radius: var(--r-md); overflow: hidden;
+}
+.conv-row {
+  display: flex; align-items: center;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.conv-row:last-child { border-bottom: none; }
+.conv-row-unit { font-weight: 700; color: var(--text-m); flex: 1; }
+.conv-row-val  { font-weight: 800; color: var(--text-h); }
+
+/* ── AI Solver / Science result ── */
+.math-solution-card {
+  background: var(--white); border: 2px solid var(--border);
+  border-left: 4px solid var(--blue);
+  border-radius: var(--r-md); padding: 18px 20px;
+  font-size: 14px; font-weight: 500;
+  color: var(--text-b); line-height: 1.8;
+}
+.math-solution-card h3 {
+  font-size: 16px; font-weight: 800;
+  color: var(--text-h); margin-bottom: 8px;
+}
+.math-solution-card .step {
+  display: flex; gap: 10px; margin-bottom: 8px;
+  padding: 8px 12px; background: var(--bg-page);
+  border-radius: var(--r-sm);
+}
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--blue); color: white;
+  font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.example-btn {
+  padding: 6px 12px; border-radius: 20px;
+  border: 2px solid var(--border); background: var(--white);
+  font-family: var(--font); font-size: 12px; font-weight: 700;
+  color: var(--text-m); cursor: pointer; transition: all .14s;
+}
+.example-btn:hover {
+  border-color: var(--blue); color: var(--blue-d);
+  background: var(--blue-l);
+}
+
+/* ── Periodic table ── */
+.periodic-table {
+  display: grid;
+  grid-template-columns: repeat(18, minmax(36px, 1fr));
+  gap: 2px;
+  font-size: 10px;
+  min-width: 680px;
+}
+.el-cell {
+  border-radius: 4px; padding: 4px 2px;
+  text-align: center; cursor: pointer;
+  transition: all .14s; border: 1.5px solid transparent;
+  min-height: 42px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 1px;
+}
+.el-cell:hover { transform: scale(1.15); z-index: 10; border-color: var(--text-h); }
+.el-num  { font-size: 8px; font-weight: 700; opacity: .7; }
+.el-sym  { font-size: 13px; font-weight: 900; }
+.el-name { font-size: 7px; font-weight: 600; opacity: .8; }
+/* Element category colors */
+.el-alkali    { background: #fde68a; color: #78350f; }
+.el-alkaline  { background: #fed7aa; color: #7c2d12; }
+.el-transition{ background: #fca5a5; color: #7f1d1d; }
+.el-post      { background: #d9f99d; color: #365314; }
+.el-metalloid { background: #a7f3d0; color: #064e3b; }
+.el-nonmetal  { background: #bae6fd; color: #0c4a6e; }
+.el-halogen   { background: #c4b5fd; color: #2e1065; }
+.el-noble     { background: #fbcfe8; color: #500724; }
+.el-lanthanide{ background: #e9d5ff; color: #3b0764; }
+.el-actinide  { background: #fecdd3; color: #4c0519; }
+
+/* ── Body systems grid ── */
+.body-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.body-card {
+  background: var(--white); border: 2px solid var(--border);
+  border-radius: var(--r-md); padding: 18px 12px;
+  text-align: center; cursor: pointer;
+  font-size: 32px;
+  transition: all .18s;
+}
+.body-card div {
+  font-size: 12px; font-weight: 800;
+  color: var(--text-m); margin-top: 8px;
+}
+.body-card:hover {
+  border-color: var(--green);
+  background: var(--green-l);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
