@@ -170,13 +170,17 @@
 /* ── Workspace container ── */
 .workspace {
   height: calc(100vh - 62px);
+  min-height: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Subject workspace layout (sidebar + content) ── */
 .subject-workspace {
   display: flex;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
