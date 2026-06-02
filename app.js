@@ -808,11 +808,6 @@ function onWordsSelected(words) {
   pop.style.left = Math.min(rect.left + rect.width / 2, window.innerWidth - 225) + 'px';
   pop.style.top  = Math.min(rect.bottom + 8, window.innerHeight - 310) + 'px';
   pop.classList.add('show');
-
-  // ── Always pre-populate the active tab so links are ready ──
-  if (curTab === 'search')    updateSearchLinks(text);
-  if (curTab === 'translate') { const o = document.getElementById('tr-original'); if (o) o.textContent = text; updateTranslateLinks(text); }
-  if (curTab === 'dict')      lookupDictionary(text);
 }
 
 function clearSelDisplay() {
@@ -828,12 +823,8 @@ function clearSelection() {
 function useSelectedText() {
   const t = document.getElementById('sel-text-display').textContent.trim();
   if (!t) return;
-  selText = t;
-  document.getElementById('q-field').value = t;
-  if (curTab === 'search')    { updateSearchLinks(t); return; }
-  if (curTab === 'translate') { showTranslateUI(t); return; }
-  if (curTab === 'dict')      { lookupDictionary(t); return; }
-  if (curTab === 'notebook')  switchTab('explain');
+  if (curTab === 'search') { updateSearchLinks(t); return; }
+  if (curTab === 'notebook') switchTab('explain');
   if (needKey()) return;
   callGemini(curTab, t);
 }
@@ -901,14 +892,6 @@ function clickWord(word) {
 }
 
 // ── IMAGE CONTEXT MENU ──
-function hideImgCtx() { document.getElementById('img-ctx').classList.remove('show'); }
-function imgCtx(type) {
-  hideImgCtx();
-  if (type === 'read')    extractOCR();
-  if (type === 'pdf')     savePDF();
-  if (type === 'explain') { if (!needKey()) callGeminiWithImage(); }
-}
-
 // ── IMAGE CONTEXT MENU ──
 const imgCtxMenu = document.getElementById('img-ctx');
 document.getElementById('cur-img').addEventListener('contextmenu', e => {
@@ -982,17 +965,15 @@ function switchTab(tab) {
 
   if (tab === 'search') {
     document.getElementById('search-area').style.display = 'flex';
-    const cur = document.getElementById('q-field').value || selText || '';
-    if (cur) document.getElementById('q-field').value = cur;
-    updateSearchLinks(cur);
+    updateSearchLinks(document.getElementById('q-field').value || '');
   } else if (tab === 'translate') {
     document.getElementById('translate-area').style.display = 'flex';
-    const cur = document.getElementById('q-field').value.trim() || selText || '';
-    if (cur) { document.getElementById('q-field').value = cur; showTranslateUI(cur); }
+    const cur = document.getElementById('q-field').value.trim();
+    if (cur) showTranslateUI(cur);
   } else if (tab === 'dict') {
     document.getElementById('dict-area').style.display = 'flex';
-    const cur = document.getElementById('q-field').value.trim() || selText || '';
-    if (cur) { document.getElementById('q-field').value = cur; lookupDictionary(cur); }
+    const cur = document.getElementById('q-field').value.trim();
+    if (cur) lookupDictionary(cur);
   } else if (tab === 'notebook') {
     document.getElementById('notebook-area').style.display = 'flex';
     renderNotebook();
@@ -1740,19 +1721,13 @@ function showTranslateUI(text) {
 
 // ── OPEN EXTERNAL LINKS (force new window, bypass GitHub Pages routing) ──
 function openTranslate() {
-  const raw = document.getElementById('tr-original')?.textContent || '';
-  const text = (raw && raw !== 'Type or select text to translate') ? raw : selText;
-  const enc  = encodeURIComponent(text || '');
-  if (!enc) { toast('⚠️ Select or type text to translate first'); return; }
+  const enc  = encodeURIComponent(document.getElementById('tr-original')?.textContent || '');
   const lang = translateTargetLang || 'ta';
   const url  = 'https://translate.google.com/?sl=auto&tl=' + lang + '&text=' + enc + '&op=translate';
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 function openDeepL() {
-  const raw = document.getElementById('tr-original')?.textContent || '';
-  const text = (raw && raw !== 'Type or select text to translate') ? raw : selText;
-  const enc  = encodeURIComponent(text || '');
-  if (!enc) { toast('⚠️ Select or type text to translate first'); return; }
+  const enc  = encodeURIComponent(document.getElementById('tr-original')?.textContent || '');
   const lang = translateTargetLang || 'ta';
   const url  = 'https://www.deepl.com/translator#auto/' + lang + '/' + enc;
   window.open(url, '_blank', 'noopener,noreferrer');
@@ -1893,7 +1868,7 @@ async function callGeminiWithImage() {
 function showLoading(msg, sub) {
   document.getElementById('load-msg').textContent = msg || 'Thinking…';
   document.getElementById('load-sub').textContent = sub || '';
-  ['empty-s','result-s','search-area','notebook-area'].forEach(id => {
+  ['empty-s','result-s','search-area','translate-area','dict-area','notebook-area'].forEach(id => {
     const el = document.getElementById(id); if (el) el.style.display = 'none';
   });
   document.getElementById('load-s').style.display = 'flex';
@@ -1933,7 +1908,7 @@ function showResult(type, word, data) {
       '<div class="sec"><div class="sec-label">Translation</div>' +
         '<div class="tblock"><div class="tblock-val translated">' + (data.translation || 'Not available') + '</div></div></div>' +
       '<div class="sec"><div class="sec-label">Translate More Online</div><div class="ext-links">' +
-        '<a class="ext-link g" href="https://translate.google.com/?text=' + encodeURIComponent(word) + '&op=translate" target="_blank">🌐 Google Translate</a>' +
+        '<a class="ext-link g" href="https://translate.google.com/?sl=auto&tl=' + (translateTargetLang||'ta') + '&text=' + encodeURIComponent(word) + '&op=translate" target="_blank">🌐 Google Translate</a>' +
         '<a class="ext-link w" href="https://www.deepl.com/translator" target="_blank">🔤 DeepL</a>' +
       '</div></div>';
 
@@ -2038,8 +2013,9 @@ function setNBFilter(btn, filter) {
 function renderNotebook() {
   const all = getWords();
   const mastered = all.filter(e => e.mastered).length;
-  document.getElementById('nb-cnt').textContent = all.length;
-  document.getElementById('nb-mastered').textContent = mastered;
+  // Update both the in-panel counters and the standalone workspace counters
+  ['nb-cnt','nb-cnt2'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = all.length; });
+  ['nb-mastered','nb-mastered2'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = mastered; });
   const filtered = nbFilterVal === 'master' ? all.filter(e => e.mastered)
                  : nbFilterVal === 'new'    ? all.filter(e => !e.mastered) : all;
   const grid  = document.getElementById('nb-grid');
@@ -2130,7 +2106,13 @@ function revealPractice() {
   document.getElementById('pr-answer').style.display = 'flex';
 }
 function practiceMark(correct) {
-  if (correct) { practiceScore++; toggleMastered(practiceQueue[practiceIdx].word); }
+  if (correct) {
+    practiceScore++;
+    // Only mark as mastered, never un-master an already-mastered word
+    const all = getWords();
+    const idx = all.findIndex(e => e.word === practiceQueue[practiceIdx].word);
+    if (idx >= 0 && !all[idx].mastered) { all[idx].mastered = true; setWords(all); }
+  }
   practiceIdx++;
   if (practiceIdx < practiceQueue.length) showPracticeCard(); else showPracticeResult();
 }
@@ -2375,13 +2357,22 @@ function onMaxWordsSelected(words) {
   document.getElementById('max-q-field').value = text;
   document.getElementById('max-sel-text').textContent = text;
   document.getElementById('max-sel-row').style.display = 'flex';
+  // Pre-populate active tab so links are ready immediately
+  if (maxTab === 'search') updateMaxSearch(text);
 }
 
 function useMaxSelected() {
   const t = document.getElementById('max-sel-text').textContent.trim();
   if (!t) return;
   selText = t;
-  if (maxTab === 'search') { updateMaxSearch(t); return; }
+  document.getElementById('max-q-field').value = t;
+  if (maxTab === 'search')    { updateMaxSearch(t); return; }
+  if (maxTab === 'translate') {
+    const enc  = encodeURIComponent(t);
+    const lang = translateTargetLang || 'ta';
+    window.open('https://translate.google.com/?sl=auto&tl=' + lang + '&text=' + enc + '&op=translate', '_blank', 'noopener,noreferrer');
+    return;
+  }
   if (needKey()) return;
   callGeminiMax(maxTab, t);
 }
@@ -2438,10 +2429,14 @@ function switchMaxTab(tab) {
     const el = document.getElementById('mtab-'+t); if(el) el.classList.toggle('active', t===tab);
   });
   const qb = document.getElementById('max-query-bar');
-  if (qb) qb.style.display = tab==='search' ? '' : '';
+  if (qb) qb.style.display = '';
   const phs = {search:'Search for any word…', explain:'Word to explain…', translate:'Text to translate…', quiz:'Topic for quiz…'};
-  const mq = document.getElementById('max-q-field'); if(mq&&phs[tab]) mq.placeholder=phs[tab];
-  if (tab==='search') { updateMaxSearch(document.getElementById('max-q-field').value||''); }
+  const mq = document.getElementById('max-q-field');
+  if (mq && phs[tab]) mq.placeholder = phs[tab];
+  // Pre-populate search with current word when switching to search tab
+  const cur = (mq && mq.value.trim()) || selText || '';
+  if (cur && mq) mq.value = cur;
+  if (tab === 'search') updateMaxSearch(cur);
 }
 
 function goMaxQuery() {
