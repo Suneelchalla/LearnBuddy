@@ -2167,6 +2167,8 @@ document.addEventListener('keydown', e => {
 });
 
 // ── INIT ──
+// Show home dashboard on startup
+if (typeof loadHomeStats === 'function') loadHomeStats();
 switchTab('search');
 renderNotebook();
 updateSearchLinks('');
