@@ -7,7 +7,9 @@
   height: calc(100vh - 62px);
   overflow-y: auto;
   background: var(--bg-page);
-  padding-bottom: 32px;
+  padding-bottom: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79,110,247,.3) transparent;
 }
 
 .home-hero {
@@ -553,21 +555,28 @@
   box-shadow: var(--shadow-lg);
   border-color: #f97316;
 }
-.story-card-img-wrap {
-  width: 100%; height: 160px;
-  overflow: hidden; position: relative;
-  background: var(--bg-page);
-  flex-shrink: 0;
+/* Story card emoji banner (no external images) */
+.story-card-banner {
+  width: 100%; height: 130px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 6px; flex-shrink: 0;
+  position: relative; overflow: hidden;
+  transition: filter .2s;
 }
-.story-card-img-wrap img {
-  width: 100%; height: 100%; object-fit: cover;
-  transition: transform .3s;
+.story-card:hover .story-card-banner { filter: brightness(1.05); }
+.story-card-emoji {
+  font-size: 52px; line-height: 1;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,.2));
+  transition: transform .2s;
 }
-.story-card:hover .story-card-img-wrap img { transform: scale(1.05); }
-.story-card-img-fallback {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 64px; background: var(--bg-page);
+.story-card:hover .story-card-emoji { transform: scale(1.12) rotate(-5deg); }
+.story-card-genre-pill {
+  font-size: 9px; font-weight: 800;
+  letter-spacing: .09em; text-transform: uppercase;
+  background: rgba(255,255,255,.22);
+  padding: 3px 10px; border-radius: 20px;
+  backdrop-filter: blur(4px);
 }
 .story-card-body {
   padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 6px;
