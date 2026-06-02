@@ -1719,38 +1719,42 @@ function showTranslateUI(text) {
 }
 
 
-// ── OPEN EXTERNAL LINKS (force new window, bypass GitHub Pages routing) ──
+// ── OPEN EXTERNAL LINKS ──
+// These are called as fallbacks; the primary mechanism is href set directly on <a> tags
 function openTranslate() {
-  const enc  = encodeURIComponent(document.getElementById('tr-original')?.textContent || '');
+  const raw = document.getElementById('tr-original')?.textContent || '';
+  const text = (raw && raw !== 'Type or select text to translate') ? raw : selText;
+  const enc  = encodeURIComponent(text || '');
+  if (!enc) { toast('⚠️ Select or type text to translate first'); return; }
   const lang = translateTargetLang || 'ta';
   const url  = 'https://translate.google.com/?sl=auto&tl=' + lang + '&text=' + enc + '&op=translate';
+  const btn  = document.getElementById('tr-open-btn');
+  if (btn) btn.href = url;
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 function openDeepL() {
-  const enc  = encodeURIComponent(document.getElementById('tr-original')?.textContent || '');
+  const raw = document.getElementById('tr-original')?.textContent || '';
+  const text = (raw && raw !== 'Type or select text to translate') ? raw : selText;
+  const enc  = encodeURIComponent(text || '');
+  if (!enc) { toast('⚠️ Select or type text to translate first'); return; }
   const lang = translateTargetLang || 'ta';
   const url  = 'https://www.deepl.com/translator#auto/' + lang + '/' + enc;
+  const btn  = document.getElementById('tr-deepl-btn');
+  if (btn) btn.href = url;
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 function updateTranslateLinks(text) {
   const enc  = encodeURIComponent(text || '');
-  const lang = translateTargetLang;
-  const gtUrl   = 'https://translate.google.com/?sl=auto&tl=' + lang + '&text=' + enc + '&op=translate';
-  const deepUrl = 'https://www.deepl.com/translator#auto/' + lang + '/' + enc;
+  const lang = translateTargetLang || 'ta';
+  const gtUrl   = enc ? 'https://translate.google.com/?sl=auto&tl=' + lang + '&text=' + enc + '&op=translate' : '#';
+  const deepUrl = enc ? 'https://www.deepl.com/translator#auto/' + lang + '/' + enc : '#';
 
-  // Update Google Translate button
+  // Set href directly on anchor tags — direct user click on <a> is never popup-blocked
   const btn = document.getElementById('tr-open-btn');
-  if (btn) {
-    btn.onclick = (e) => { e.preventDefault(); window.open(gtUrl, '_blank', 'noopener,noreferrer'); };
-    btn.href = gtUrl; // keep href for accessibility
-  }
-  // Update DeepL button
+  if (btn) btn.href = gtUrl;
   const deepLBtn = document.getElementById('tr-deepl-btn');
-  if (deepLBtn) {
-    deepLBtn.onclick = (e) => { e.preventDefault(); window.open(deepUrl, '_blank', 'noopener,noreferrer'); };
-    deepLBtn.href = deepUrl;
-  }
+  if (deepLBtn) deepLBtn.href = deepUrl;
 }
 
 function setTranslateLang(btn) {
@@ -1773,24 +1777,30 @@ function updateSearchLinks(term) {
   const enc     = encodeURIComponent(t);
   const encKids = encodeURIComponent(t + ' for kids');
 
-  // Store URLs in data attributes so openSearchLink() can read them
   const urls = {
-    g: 'https://www.google.com/search?q=' + enc,
-    w: 'https://en.wikipedia.org/wiki/Special:Search?search=' + enc,
-    k: 'https://www.khanacademy.org/search?page_search_query=' + enc,
-    y: 'https://www.youtube.com/results?search_query=' + encKids
+    g: t ? 'https://www.google.com/search?q=' + enc : '#',
+    w: t ? 'https://en.wikipedia.org/wiki/Special:Search?search=' + enc : '#',
+    k: t ? 'https://www.khanacademy.org/search?page_search_query=' + enc : '#',
+    y: t ? 'https://www.youtube.com/results?search_query=' + encKids : '#'
   };
+
   ['g','w','k','y'].forEach(id => {
     const el = document.getElementById('sl-' + id);
-    if (el) el.dataset.url = urls[id];
+    if (!el) return;
+    // Set href directly — anchor clicks are never popup-blocked by browsers
+    el.href = urls[id];
+    el.dataset.url = urls[id]; // keep dataset in sync for openSearchLink fallback
+    // Visually dim cards when no word selected
+    el.style.opacity = t ? '1' : '0.45';
+    el.style.pointerEvents = t ? '' : 'none';
   });
 }
 
-// Opens search link in new window — bypasses GitHub Pages router
+// Fallback for any inline onclick="openSearchLink('g')" still in markup
 function openSearchLink(id) {
   const el = document.getElementById('sl-' + id);
-  const url = el && el.dataset.url;
-  if (url && url !== '#') {
+  const url = el && (el.href || el.dataset.url);
+  if (url && url !== '#' && !url.endsWith('#')) {
     window.open(url, '_blank', 'noopener,noreferrer');
   } else {
     toast('⚠️ Please select a word first');
