@@ -53,67 +53,57 @@
       <div class="home-greeting" id="home-greeting">Good morning! 👋</div>
       <h1 class="home-title">What would you like to learn today?</h1>
       <p class="home-sub">Choose a subject below to get started</p>
-
-      <!-- ── WORD OF THE DAY strip (compact, lives in hero) ── -->
-      <div class="wotd-strip" id="wotd-section">
-
-        <!-- Collapsed pill (always visible) -->
-        <div class="wotd-pill" id="wotd-pill" onclick="toggleWOTD()">
-          <span class="wotd-pill-badge">✨ Word of the Day</span>
-          <span class="wotd-pill-word" id="wotd-word">...</span>
-          <span class="wotd-pill-pos"  id="wotd-pos"></span>
-          <span class="wotd-pill-sep">—</span>
-          <span class="wotd-pill-def"  id="wotd-meaning">loading…</span>
-          <button class="wotd-pill-speak" id="wotd-speak" onclick="event.stopPropagation();speakWOTD()" title="Hear it">🔊</button>
-          <button class="wotd-pill-refresh" onclick="event.stopPropagation();refreshWOTD()" title="New word">🔄</button>
-          <span class="wotd-pill-chevron" id="wotd-chevron">▾</span>
-        </div>
-
-        <!-- Expanded panel (hidden by default) -->
-        <div class="wotd-panel" id="wotd-panel" style="display:none;">
-
-          <!-- Loading skeleton -->
-          <div id="wotd-loading" class="wotd-skel-row" style="display:none;">
-            <div class="wotd-skel" style="width:140px;height:14px;border-radius:6px;"></div>
-            <div class="wotd-skel" style="width:80%;height:12px;border-radius:6px;margin-top:6px;"></div>
-          </div>
-
-          <div id="wotd-content">
-            <div class="wotd-panel-body">
-              <div class="wotd-panel-left">
-                <div class="wotd-panel-phonetic" id="wotd-phonetic"></div>
-                <div class="wotd-panel-fullmean" id="wotd-fullmean"></div>
-                <div class="wotd-panel-example"  id="wotd-example"></div>
-                <div class="wotd-panel-fact"      id="wotd-fact-wrap" style="display:none;">
-                  <span class="wotd-fact-label">⭐</span>
-                  <span id="wotd-fact"></span>
-                </div>
-              </div>
-              <div class="wotd-panel-right">
-                <span class="wotd-panel-emoji" id="wotd-emoji"></span>
-              </div>
-            </div>
-            <div class="wotd-panel-actions">
-              <button class="wotd-action-btn wotd-save"    onclick="saveWOTD()">📒 Save</button>
-              <button class="wotd-action-btn wotd-explore" onclick="exploreWOTD()">🔍 Explore</button>
-              <button class="wotd-action-btn wotd-quiz"    onclick="quizWOTD()">🎯 Quiz me!</button>
-            </div>
-            <!-- Mini quiz -->
-            <div id="wotd-quiz-wrap" style="display:none;" class="wotd-quiz-area">
-              <div class="wotd-quiz-q"    id="wotd-quiz-q"></div>
-              <div class="wotd-quiz-opts" id="wotd-quiz-opts"></div>
-              <div class="wotd-quiz-fb"   id="wotd-quiz-fb"></div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-      <!-- end WOTD -->
-
     </div>
   </div>
 
-  <!-- Subject cards grid -->
+  <!-- ── WORD OF THE DAY — outside hero so overflow:hidden never blocks clicks ── -->
+  <div class="wotd-strip" id="wotd-section">
+    <div class="wotd-pill" id="wotd-pill" onclick="toggleWOTD()">
+      <span class="wotd-pill-badge">✨ Word of the Day</span>
+      <span class="wotd-pill-word" id="wotd-word">...</span>
+      <span class="wotd-pill-pos"  id="wotd-pos"></span>
+      <span class="wotd-pill-sep">—</span>
+      <span class="wotd-pill-def"  id="wotd-meaning">loading…</span>
+      <button class="wotd-pill-speak" id="wotd-speak" onclick="event.stopPropagation();speakWOTD()" title="Hear it">🔊</button>
+      <button class="wotd-pill-refresh" onclick="event.stopPropagation();refreshWOTD()" title="New word">🔄</button>
+      <span class="wotd-pill-chevron" id="wotd-chevron">▾</span>
+    </div>
+    <div class="wotd-panel" id="wotd-panel" style="display:none;">
+      <div id="wotd-loading" class="wotd-skel-row" style="display:none;">
+        <div class="wotd-skel" style="width:140px;height:14px;border-radius:6px;"></div>
+        <div class="wotd-skel" style="width:80%;height:12px;border-radius:6px;margin-top:6px;"></div>
+      </div>
+      <div id="wotd-content">
+        <div class="wotd-panel-body">
+          <div class="wotd-panel-left">
+            <div class="wotd-panel-phonetic" id="wotd-phonetic"></div>
+            <div class="wotd-panel-fullmean" id="wotd-fullmean"></div>
+            <div class="wotd-panel-example"  id="wotd-example"></div>
+            <div class="wotd-panel-fact"     id="wotd-fact-wrap" style="display:none;">
+              <span class="wotd-fact-label">⭐</span>
+              <span id="wotd-fact"></span>
+            </div>
+          </div>
+          <div class="wotd-panel-right">
+            <span class="wotd-panel-emoji" id="wotd-emoji"></span>
+          </div>
+        </div>
+        <div class="wotd-panel-actions">
+          <button class="wotd-action-btn wotd-save"    onclick="saveWOTD()">📒 Save</button>
+          <button class="wotd-action-btn wotd-explore" onclick="exploreWOTD()">🔍 Explore</button>
+          <button class="wotd-action-btn wotd-quiz"    onclick="quizWOTD()">🎯 Quiz me!</button>
+        </div>
+        <div id="wotd-quiz-wrap" style="display:none;" class="wotd-quiz-area">
+          <div class="wotd-quiz-q"    id="wotd-quiz-q"></div>
+          <div class="wotd-quiz-opts" id="wotd-quiz-opts"></div>
+          <div class="wotd-quiz-fb"   id="wotd-quiz-fb"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- end WOTD -->
+
+    <!-- Subject cards grid -->
   <div class="subjects-grid">
 
     <!-- 📖 Lesson Viewer -->
