@@ -25,12 +25,16 @@ function openSubject(name) {
   }
   const titles = {
     lesson: '📖 Lesson Viewer', math: '➗ Mathematics',
-    science: '🔬 Science', language: '🌍 Languages', notebook: '📒 My Notebook'
+    science: '🔬 Science', language: '🌍 Languages', notebook: '📒 My Notebook',
+    stories: '📖 Stories'
   };
   document.getElementById('page-tagline').textContent = titles[name] || 'LearnBuddy';
   if (name === 'math')     { mathTab('calc'); }
   if (name === 'stories')  { if(typeof initStories==='function') initStories(); }
-  if (name === 'science')  { sciTab('periodic'); buildPeriodicTable(); }
+  if (name === 'science')  {
+    // Use setTimeout so the overridden sciTab (defined later in math.js) is in scope
+    setTimeout(() => { sciTab('body'); }, 0);
+  }
   if (name === 'language') { langTab('trans'); }
   if (name === 'notebook') { renderNotebookStandalone(); }
 }
@@ -571,7 +575,7 @@ function renderNotebookStandalone() {
 // ── HASH ROUTER ──────────────────────────────
 // Enables Ctrl+click / right-click → open in new tab
 // and browser back/forward navigation
-const VALID_SUBJECTS = ['lesson','math','science','language','notebook'];
+const VALID_SUBJECTS = ['lesson','math','science','language','notebook','stories'];
 
 function handleHashRoute() {
   const hash = window.location.hash.replace('#','').toLowerCase().trim();
