@@ -603,3 +603,777 @@ document.addEventListener('DOMContentLoaded', () => {
   // Route on first load
   handleHashRoute();
 });
+
+
+// ═══════════════════════════════════════════════
+//  MATHEMATICS — NEW TOOLS & CLASS 5 TOPICS
+// ═══════════════════════════════════════════════
+
+// Update mathTab to include new panels
+const ALL_MATH_TABS = ['calc','abacus','tables','geometry','convert','fractions','patterns','hcflcm','decimals','percent','area','roman','solve'];
+const _origMathTab = mathTab;
+mathTab = function(tab) {
+  ALL_MATH_TABS.forEach(t => {
+    const el = document.getElementById('math-' + t);
+    if (el) el.style.display = t === tab ? '' : 'none';
+    const btn = document.getElementById('math-nav-' + t);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  if (tab === 'tables')   renderTimesTable(ttNum);
+  if (tab === 'convert')  setConvType(document.querySelector('.conv-tab'), 'length');
+  if (tab === 'abacus')   initAbacus();
+  if (tab === 'fractions') drawFraction();
+  if (tab === 'patterns') renderPatterns();
+  if (tab === 'roman')    { convertRoman(); newRomanQuiz(); }
+  if (tab === 'hcflcm')   calcHCFLCM();
+};
+
+// ── ABACUS ───────────────────────────────────
+// 5-rod abacus: Ten-thousands, Thousands, Hundreds, Tens, Ones
+// Each rod: 1 heaven bead (×5) + 4 earth beads (×1)
+const ABACUS_COLS = [
+  { label: 'T.Th', place: 10000 },
+  { label: 'Th',   place: 1000  },
+  { label: 'H',    place: 100   },
+  { label: 'T',    place: 10    },
+  { label: 'O',    place: 1     }
+];
+let abacusState = ABACUS_COLS.map(() => ({ heaven: 0, earth: 0 })); // 0 or 1 heaven, 0-4 earth
+let abacusChallengeAnswer = 0;
+
+function initAbacus() {
+  const cont = document.getElementById('abacus-container');
+  if (cont.dataset.built) { updateAbacusDisplay(); return; }
+  cont.dataset.built = '1';
+  const frame = document.createElement('div');
+  frame.className = 'abacus-frame';
+  frame.id = 'abacus-frame';
+
+  ABACUS_COLS.forEach((col, ci) => {
+    const rod = document.createElement('div');
+    rod.className = 'abacus-rod';
+
+    const label = document.createElement('div');
+    label.className = 'abacus-rod-label';
+    label.textContent = col.label;
+    rod.appendChild(label);
+
+    // Heaven bead (counts as 5)
+    const hBead = document.createElement('div');
+    hBead.className = 'abacus-bead inactive';
+    hBead.id = `ab-${ci}-h`;
+    hBead.title = 'Heaven bead (×5)';
+    hBead.onclick = () => { abacusState[ci].heaven = abacusState[ci].heaven ? 0 : 1; updateAbacusDisplay(); };
+    rod.appendChild(hBead);
+
+    // Divider bar
+    const div = document.createElement('div');
+    div.className = 'abacus-divider';
+    rod.appendChild(div);
+
+    // 4 Earth beads (each counts as 1)
+    for (let i = 0; i < 4; i++) {
+      const eBead = document.createElement('div');
+      eBead.className = 'abacus-bead inactive';
+      eBead.id = `ab-${ci}-e${i}`;
+      eBead.title = 'Earth bead (×1)';
+      eBead.onclick = (function(col_i, bead_i) {
+        return () => {
+          // Toggle: clicking a lower bead activates all up to it
+          const cur = abacusState[col_i].earth;
+          abacusState[col_i].earth = (cur === bead_i + 1) ? bead_i : bead_i + 1;
+          updateAbacusDisplay();
+        };
+      })(ci, i);
+      rod.appendChild(eBead);
+    }
+
+    frame.appendChild(rod);
+  });
+
+  cont.appendChild(frame);
+  updateAbacusDisplay();
+  newAbacusChallenge();
+}
+
+function updateAbacusDisplay() {
+  let total = 0;
+  ABACUS_COLS.forEach((col, ci) => {
+    const val = abacusState[ci].heaven * 5 + abacusState[ci].earth;
+    total += val * col.place;
+    // Update heaven bead visual
+    const hBead = document.getElementById(`ab-${ci}-h`);
+    if (hBead) hBead.className = 'abacus-bead ' + (abacusState[ci].heaven ? 'active' : 'inactive');
+    // Update earth beads
+    for (let i = 0; i < 4; i++) {
+      const eBead = document.getElementById(`ab-${ci}-e${i}`);
+      if (eBead) eBead.className = 'abacus-bead ' + (i < abacusState[ci].earth ? 'active' : 'inactive');
+    }
+  });
+  const valEl = document.getElementById('abacus-value');
+  if (valEl) valEl.textContent = total.toLocaleString();
+}
+
+function getAbacusValue() {
+  return ABACUS_COLS.reduce((sum, col, ci) => sum + (abacusState[ci].heaven * 5 + abacusState[ci].earth) * col.place, 0);
+}
+
+function resetAbacus() {
+  abacusState = ABACUS_COLS.map(() => ({ heaven: 0, earth: 0 }));
+  updateAbacusDisplay();
+}
+
+function setAbacusNumber(n) {
+  abacusState = ABACUS_COLS.map(() => ({ heaven: 0, earth: 0 }));
+  let rem = Math.min(99999, Math.max(0, n));
+  ABACUS_COLS.forEach((col, ci) => {
+    const digit = Math.floor(rem / col.place);
+    rem -= digit * col.place;
+    abacusState[ci].heaven = digit >= 5 ? 1 : 0;
+    abacusState[ci].earth  = digit >= 5 ? digit - 5 : digit;
+  });
+  updateAbacusDisplay();
+}
+
+function randomAbacus() {
+  setAbacusNumber(Math.floor(Math.random() * 99999) + 1);
+}
+
+function newAbacusChallenge() {
+  abacusChallengeAnswer = Math.floor(Math.random() * 9999) + 1;
+  const el = document.getElementById('abacus-challenge-q');
+  if (el) el.textContent = '🎯 Show the number ' + abacusChallengeAnswer.toLocaleString() + ' on the abacus';
+  const fb = document.getElementById('abacus-challenge-fb');
+  if (fb) fb.textContent = '';
+}
+
+function checkAbacus() {
+  const current = getAbacusValue();
+  const fb = document.getElementById('abacus-challenge-fb');
+  if (current === abacusChallengeAnswer) {
+    fb.textContent = '✅ Correct! ' + abacusChallengeAnswer.toLocaleString() + ' — Great job!';
+    fb.style.color = 'var(--green)';
+    setTimeout(newAbacusChallenge, 1500);
+  } else {
+    fb.textContent = '❌ You showed ' + current.toLocaleString() + ' — try again!';
+    fb.style.color = 'var(--rose)';
+  }
+}
+
+// ── FRACTIONS ────────────────────────────────
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+function drawFraction() {
+  const num = parseInt(document.getElementById('frac-num')?.value) || 1;
+  const den = parseInt(document.getElementById('frac-den')?.value) || 4;
+  if (!den || den < 1) return;
+  const canvas = document.getElementById('frac-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw pie chart
+  const cx = 100, cy = 100, r = 80;
+  const sliceAngle = (2 * Math.PI) / den;
+  for (let i = 0; i < den; i++) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, -Math.PI/2 + i*sliceAngle, -Math.PI/2 + (i+1)*sliceAngle);
+    ctx.closePath();
+    ctx.fillStyle = i < num ? '#4f6ef7' : '#e5e7eb';
+    ctx.fill();
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+  ctx.font = 'bold 14px Nunito';
+  ctx.fillStyle = '#1e1b4b';
+  ctx.textAlign = 'center';
+  ctx.fillText(num + ' / ' + den, cx, cy + r + 20);
+
+  // Draw bar chart
+  const bx = 230, by = 60, bw = 240, bh = 50;
+  const filled = Math.min(num / den, 1);
+  ctx.fillStyle = '#e5e7eb';
+  ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 6); ctx.fill();
+  ctx.fillStyle = '#4f6ef7';
+  ctx.beginPath(); ctx.roundRect(bx, by, bw * filled, bh, 6); ctx.fill();
+  // Segment lines
+  for (let i = 1; i < den; i++) {
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(bx + (bw/den)*i, by);
+    ctx.lineTo(bx + (bw/den)*i, by+bh);
+    ctx.stroke();
+  }
+  ctx.font = 'bold 16px Nunito'; ctx.fillStyle = '#1e1b4b'; ctx.textAlign = 'center';
+  ctx.fillText(num + ' / ' + den, bx + bw/2, by + bh + 22);
+
+  // Show simplified form
+  const g = gcd(Math.abs(num), den);
+  const simpEl = document.getElementById('frac-simplified');
+  const infoEl = document.getElementById('frac-info');
+  if (simpEl) {
+    if (g > 1 && num > 0) simpEl.textContent = 'Simplified: ' + (num/g) + '/' + (den/g);
+    else simpEl.textContent = '';
+  }
+  if (infoEl) {
+    const dec = (num/den).toFixed(4);
+    const pct = (num/den*100).toFixed(1);
+    infoEl.innerHTML = `<strong>${num}/${den}</strong> = ${dec} as a decimal = <strong>${pct}%</strong> as a percentage`;
+  }
+}
+
+function calcFractions() {
+  const n1 = parseInt(document.getElementById('fc-n1').value);
+  const d1 = parseInt(document.getElementById('fc-d1').value);
+  const n2 = parseInt(document.getElementById('fc-n2').value);
+  const d2 = parseInt(document.getElementById('fc-d2').value);
+  const op = document.getElementById('fc-op').value;
+  let rn, rd;
+  if (op === '+') { rn = n1*d2 + n2*d1; rd = d1*d2; }
+  else if (op === '-') { rn = n1*d2 - n2*d1; rd = d1*d2; }
+  else if (op === '×') { rn = n1*n2; rd = d1*d2; }
+  else { rn = n1*d2; rd = d1*n2; }
+  const g = gcd(Math.abs(rn), Math.abs(rd));
+  const el = document.getElementById('fc-result');
+  if (el) el.textContent = `${n1}/${d1} ${op} ${n2}/${d2} = ${rn/g}/${rd/g}` + (rd/g === 1 ? ` = ${rn/g}` : '');
+}
+
+// ── NUMBER PATTERNS ───────────────────────────
+let patternQuizData = { seq: [], answer: 0 };
+
+function renderPatterns() {
+  const show = (id, arr) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = arr.slice(0,10).map((n,i)=>`<span style="display:inline-block;background:white;border:2px solid var(--border);border-radius:6px;padding:2px 8px;margin:2px;">${n}</span>`).join(' ') + ' <span style="font-size:18px;font-weight:900">…</span>';
+  };
+  const fib = [1,1]; for(let i=2;i<12;i++) fib.push(fib[i-1]+fib[i-2]);
+  show('pat-fib', fib);
+  show('pat-sq', Array.from({length:10},(_,i)=>(i+1)*(i+1)));
+  show('pat-tri', Array.from({length:10},(_,i)=>(i+1)*(i+2)/2));
+  // Primes
+  const primes=[];for(let n=2;primes.length<10;n++){let p=true;for(let i=2;i<=Math.sqrt(n);i++)if(n%i===0){p=false;break;}if(p)primes.push(n);}
+  show('pat-prime', primes);
+  show('pat-pow', Array.from({length:8},(_,i)=>Math.pow(3,i+1)));
+  show('pat-even', Array.from({length:10},(_,i)=>(i+1)*2));
+  newPatternQuiz();
+}
+
+function newPatternQuiz() {
+  const patterns = [
+    { seq: [2,4,6,8,10], next: 12, hint: 'even numbers' },
+    { seq: [1,4,9,16,25], next: 36, hint: 'square numbers' },
+    { seq: [1,1,2,3,5,8], next: 13, hint: 'Fibonacci' },
+    { seq: [3,6,12,24,48], next: 96, hint: 'multiply by 2' },
+    { seq: [100,90,80,70,60], next: 50, hint: 'subtract 10' },
+    { seq: [1,3,6,10,15], next: 21, hint: 'triangular numbers' },
+    { seq: [5,10,15,20,25], next: 30, hint: 'multiples of 5' },
+    { seq: [2,6,18,54,162], next: 486, hint: 'multiply by 3' },
+    { seq: [1,8,27,64,125], next: 216, hint: 'cube numbers' },
+    { seq: [32,16,8,4,2], next: 1, hint: 'divide by 2' },
+  ];
+  const p = patterns[Math.floor(Math.random()*patterns.length)];
+  patternQuizData = { seq: p.seq, answer: p.next, hint: p.hint };
+  const el = document.getElementById('pattern-quiz-q');
+  if (el) el.textContent = p.seq.join(', ') + ', ❓';
+  const fb = document.getElementById('pattern-fb');
+  if (fb) fb.textContent = '';
+  const inp = document.getElementById('pattern-answer');
+  if (inp) inp.value = '';
+}
+
+function checkPatternQuiz() {
+  const ans = parseInt(document.getElementById('pattern-answer')?.value);
+  const fb  = document.getElementById('pattern-fb');
+  if (ans === patternQuizData.answer) {
+    fb.textContent = '✅ Correct! Pattern: ' + patternQuizData.hint;
+    fb.style.color = 'var(--green)';
+    setTimeout(newPatternQuiz, 1500);
+  } else {
+    fb.textContent = '❌ Not quite. Hint: ' + patternQuizData.hint;
+    fb.style.color = 'var(--rose)';
+  }
+}
+
+// ── HCF & LCM ────────────────────────────────
+function calcHCFLCM() {
+  const a = parseInt(document.getElementById('hcf-a')?.value) || 12;
+  const b = parseInt(document.getElementById('hcf-b')?.value) || 18;
+  if (!a || !b || a < 1 || b < 1) return;
+  const h = gcd(a, b);
+  const l = (a * b) / h;
+  const factorsA = getFactors(a), factorsB = getFactors(b);
+  const el = document.getElementById('hcflcm-result');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px;">
+      <div class="geo-card" style="border-left:4px solid var(--blue)">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--text-l);margin-bottom:6px;">Factors of ${a}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-b)">${factorsA.map(f=>`<span style="background:${factorsB.includes(f)?'var(--blue)':'var(--bg-page)'};color:${factorsB.includes(f)?'white':'inherit'};padding:2px 7px;border-radius:4px;margin:2px;display:inline-block;font-weight:700">${f}</span>`).join('')}</div>
+      </div>
+      <div class="geo-card" style="border-left:4px solid var(--purple)">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--text-l);margin-bottom:6px;">Factors of ${b}</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-b)">${factorsB.map(f=>`<span style="background:${factorsA.includes(f)?'var(--blue)':'var(--bg-page)'};color:${factorsA.includes(f)?'white':'inherit'};padding:2px 7px;border-radius:4px;margin:2px;display:inline-block;font-weight:700">${f}</span>`).join('')}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div class="geo-card" style="text-align:center;border-left:4px solid var(--green)">
+        <div style="font-size:13px;font-weight:700;color:var(--text-m)">HCF (Highest Common Factor)</div>
+        <div style="font-size:42px;font-weight:900;color:var(--green)">${h}</div>
+        <div style="font-size:12px;color:var(--text-m)">Common factors highlighted in blue</div>
+      </div>
+      <div class="geo-card" style="text-align:center;border-left:4px solid var(--amber)">
+        <div style="font-size:13px;font-weight:700;color:var(--text-m)">LCM (Lowest Common Multiple)</div>
+        <div style="font-size:42px;font-weight:900;color:var(--amber)">${l}</div>
+        <div style="font-size:12px;color:var(--text-m)">LCM = (${a} × ${b}) ÷ HCF(${h})</div>
+      </div>
+    </div>`;
+}
+function getFactors(n) {
+  const f=[];for(let i=1;i<=n;i++)if(n%i===0)f.push(i);return f;
+}
+
+// ── DECIMALS ──────────────────────────────────
+function showDecimalPlace() {
+  const raw = document.getElementById('dec-num')?.value || '';
+  const parts = raw.split('.');
+  const intPart = parts[0] || '0';
+  const decPart = parts[1] || '';
+  const placeNames = ['Ones','Tens','Hundreds','Thousands','Ten-Thousands'];
+  const decPlaceNames = ['Tenths','Hundredths','Thousandths','Ten-Thousandths'];
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">';
+  for (let i = intPart.length-1; i >= 0; i--) {
+    const place = placeNames[intPart.length-1-i] || (Math.pow(10,intPart.length-1-i)+'s');
+    html += `<div style="text-align:center;background:var(--blue-l);border:2px solid #c7d2fe;border-radius:8px;padding:8px 12px;"><div style="font-size:22px;font-weight:900;color:var(--blue-d)">${intPart[i]}</div><div style="font-size:10px;font-weight:700;color:var(--text-m)">${place}</div></div>`;
+  }
+  if (decPart) {
+    html += `<div style="font-size:28px;font-weight:900;color:var(--text-l);padding:8px 4px;">.</div>`;
+    for (let i = 0; i < decPart.length; i++) {
+      html += `<div style="text-align:center;background:var(--amber-l);border:2px solid #fcd34d;border-radius:8px;padding:8px 12px;"><div style="font-size:22px;font-weight:900;color:#92400e">${decPart[i]}</div><div style="font-size:10px;font-weight:700;color:var(--text-m)">${decPlaceNames[i]||'…'}</div></div>`;
+    }
+  }
+  html += '</div>';
+  const el = document.getElementById('dec-place-result');
+  if (el) el.innerHTML = html;
+}
+function convertDecFrac() {
+  const input = document.getElementById('dec-frac')?.value?.trim() || '';
+  const el = document.getElementById('dec-frac-result');
+  if (!el) return;
+  if (input.includes('/')) {
+    const [n,d] = input.split('/').map(Number);
+    if (!d) return;
+    el.textContent = `${n}/${d} = ${(n/d).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')}`;
+  } else {
+    const dec = parseFloat(input);
+    if (isNaN(dec)) return;
+    const decimals = (input.split('.')[1]||'').length;
+    const denom = Math.pow(10, decimals);
+    const num = Math.round(dec * denom);
+    const g = gcd(num, denom);
+    el.textContent = `${dec} = ${num/g}/${denom/g}`;
+  }
+}
+function calcDecOp() {
+  const a = parseFloat(document.getElementById('dec-op-a')?.value);
+  const b = parseFloat(document.getElementById('dec-op-b')?.value);
+  const op = document.getElementById('dec-op')?.value;
+  let res;
+  if (op==='+') res=a+b; else if(op==='-') res=a-b; else if(op==='×') res=a*b; else res=b?a/b:0;
+  const el = document.getElementById('dec-op-result');
+  if (el) el.textContent = `${a} ${op} ${b} = ${parseFloat(res.toFixed(8))}`;
+}
+function roundDecimal() {
+  const n = parseFloat(document.getElementById('dec-round-n')?.value);
+  const p = parseInt(document.getElementById('dec-round-p')?.value);
+  const el = document.getElementById('dec-round-result');
+  if (el) el.textContent = `${n} rounded to ${p} d.p. = ${n.toFixed(p)}`;
+}
+
+// ── PERCENTAGES ───────────────────────────────
+function calcPctOf() {
+  const x=parseFloat(document.getElementById('pct-x')?.value);
+  const y=parseFloat(document.getElementById('pct-y')?.value);
+  const res=(x/100)*y;
+  const el=document.getElementById('pct-of-result');
+  if(el) el.innerHTML=`${x}% of ${y} = <strong>${res}</strong>`;
+  drawPctBar(x/100);
+}
+function calcWhatPct() {
+  const a=parseFloat(document.getElementById('pct-a')?.value);
+  const b=parseFloat(document.getElementById('pct-b')?.value);
+  const res=(a/b*100).toFixed(2);
+  const el=document.getElementById('pct-what-result');
+  if(el) el.innerHTML=`${a} is <strong>${res}%</strong> of ${b}`;
+  drawPctBar(a/b);
+}
+function calcPctChange() {
+  const orig=parseFloat(document.getElementById('pct-orig')?.value);
+  const newv=parseFloat(document.getElementById('pct-new')?.value);
+  const pct=((newv-orig)/orig*100).toFixed(2);
+  const el=document.getElementById('pct-change-result');
+  const dir=pct>=0?'📈 Increase':'📉 Decrease';
+  if(el) el.innerHTML=`${dir} of <strong>${Math.abs(pct)}%</strong>`;
+  drawPctBar(Math.min(newv/orig,1));
+}
+function drawPctBar(ratio) {
+  const canvas=document.getElementById('pct-bar-canvas');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const r=Math.max(0,Math.min(1,ratio||0));
+  ctx.fillStyle='#e5e7eb'; ctx.beginPath(); ctx.roundRect(10,20,220,40,8); ctx.fill();
+  const grad=ctx.createLinearGradient(10,0,230,0);
+  grad.addColorStop(0,'#4f6ef7'); grad.addColorStop(1,'#8b5cf6');
+  ctx.fillStyle=grad; ctx.beginPath(); ctx.roundRect(10,20,220*r,40,8); ctx.fill();
+  ctx.font='bold 14px Nunito'; ctx.fillStyle='#1e1b4b'; ctx.textAlign='center';
+  ctx.fillText(Math.round(r*100)+'%', 120, 72);
+  const lbl=document.getElementById('pct-bar-label');
+  if(lbl) lbl.textContent=Math.round(r*100)+'% filled';
+}
+
+// ── AREA & VOLUME ─────────────────────────────
+function calcVolume(shape) {
+  const fmt=n=>Math.round(n*100)/100;
+  const pi=Math.PI;
+  let html='';
+  if(shape==='cuboid') {
+    const l=parseFloat(document.getElementById('cub-l').value);
+    const w=parseFloat(document.getElementById('cub-w').value);
+    const h=parseFloat(document.getElementById('cub-h').value);
+    if([l,w,h].some(isNaN)){showGeoResult('cuboid-result','⚠️ Enter all 3 values');return;}
+    html=`📦 Volume = ${fmt(l*w*h)} cm³<br>📐 Surface Area = ${fmt(2*(l*w+w*h+h*l))} cm²`;
+  } else if(shape==='cylinder') {
+    const r=parseFloat(document.getElementById('cyl-r').value);
+    const h=parseFloat(document.getElementById('cyl-h').value);
+    if([r,h].some(isNaN)){showGeoResult('cylinder-result','⚠️ Enter radius and height');return;}
+    html=`🔵 Volume = ${fmt(pi*r*r*h)} cm³<br>📐 Curved Surface = ${fmt(2*pi*r*h)} cm²<br>📏 Total Surface = ${fmt(2*pi*r*(r+h))} cm²`;
+  } else if(shape==='prism') {
+    const b=parseFloat(document.getElementById('prism-b').value);
+    const h=parseFloat(document.getElementById('prism-h').value);
+    const l=parseFloat(document.getElementById('prism-l').value);
+    if([b,h,l].some(isNaN)){showGeoResult('prism-result','⚠️ Enter all values');return;}
+    html=`🔺 Volume = ${fmt(0.5*b*h*l)} cm³<br>📐 Cross-section Area = ${fmt(0.5*b*h)} cm²`;
+  } else if(shape==='sphere') {
+    const r=parseFloat(document.getElementById('sph-r').value);
+    if(isNaN(r)){showGeoResult('sphere-result','⚠️ Enter radius');return;}
+    html=`⚽ Volume = ${fmt(4/3*pi*r*r*r)} cm³<br>📐 Surface Area = ${fmt(4*pi*r*r)} cm²`;
+  }
+  showGeoResult(shape+'-result', html);
+}
+
+// ── ROMAN NUMERALS ────────────────────────────
+const ROMAN_MAP = [['M',1000],['CM',900],['D',500],['CD',400],['C',100],['XC',90],['L',50],['XL',40],['X',10],['IX',9],['V',5],['IV',4],['I',1]];
+function toRoman(n) {
+  if(n<1||n>3999) return 'Out of range (1–3999)';
+  let result='';
+  ROMAN_MAP.forEach(([r,v])=>{while(n>=v){result+=r;n-=v;}});
+  return result;
+}
+function fromRoman(s) {
+  const vals={I:1,V:5,X:10,L:50,C:100,D:500,M:1000};
+  s=s.toUpperCase().trim();
+  let total=0;
+  for(let i=0;i<s.length;i++){
+    const cur=vals[s[i]]||0, nxt=vals[s[i+1]]||0;
+    total+=cur<nxt?-cur:cur;
+  }
+  return total;
+}
+function convertRoman() {
+  const n=parseInt(document.getElementById('rom-num')?.value)||2024;
+  const el=document.getElementById('rom-result');
+  if(el) el.textContent=toRoman(n);
+}
+function convertFromRoman() {
+  const s=document.getElementById('rom-input')?.value||'';
+  const n=fromRoman(s);
+  const el=document.getElementById('rom-from-result');
+  if(el) el.textContent=n>0?n:'Invalid';
+}
+let romanQuizMode='toRoman', romanQuizAnswer='';
+function newRomanQuiz() {
+  romanQuizMode=Math.random()<0.5?'toRoman':'fromRoman';
+  const n=Math.floor(Math.random()*99)+1;
+  const el=document.getElementById('roman-quiz-q');
+  const ans=document.getElementById('roman-quiz-ans');
+  const fb=document.getElementById('roman-quiz-fb');
+  if(ans) ans.value='';
+  if(fb) fb.textContent='';
+  if(el) {
+    if(romanQuizMode==='toRoman'){
+      el.textContent='Write '+n+' in Roman numerals:';
+      romanQuizAnswer=toRoman(n);
+    } else {
+      const r=toRoman(n);
+      el.textContent='What is '+r+' in numbers?';
+      romanQuizAnswer=String(n);
+    }
+  }
+}
+function checkRomanQuiz() {
+  const ans=(document.getElementById('roman-quiz-ans')?.value||'').trim().toUpperCase();
+  const fb=document.getElementById('roman-quiz-fb');
+  if(ans.toUpperCase()===romanQuizAnswer.toUpperCase()){
+    fb.textContent='✅ Correct! '+romanQuizAnswer; fb.style.color='var(--green)';
+    setTimeout(newRomanQuiz,1200);
+  } else {
+    fb.textContent='❌ Answer is '+romanQuizAnswer; fb.style.color='var(--rose)';
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  SCIENCE — CLASS 5 TOPICS & NEW PANELS
+// ═══════════════════════════════════════════════
+
+const ALL_SCI_TABS = ['body','plants','animals','foodchain','periodic','matter','forces','solar','water','rocks','health','explain'];
+
+sciTab = function(tab) {
+  ALL_SCI_TABS.forEach(t => {
+    const el = document.getElementById('sci-' + t);
+    if (el) el.style.display = t === tab ? '' : 'none';
+    const btn = document.getElementById('sci-nav-' + t);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+  if (tab === 'periodic') buildPeriodicTable();
+  if (tab === 'solar')    drawSolarSystem();
+  if (tab === 'water')    drawWaterCycle();
+  if (tab === 'foodchain') initFoodChain();
+};
+
+// ── SCIENCE TOPIC CARDS (Knowledge Base) ─────
+const SCI_KNOWLEDGE = {
+  // Plants
+  'parts-of-plant': { title:'Parts of a Plant', body:'A plant has <strong>roots</strong> (anchor + absorb water), <strong>stem</strong> (carries water up), <strong>leaves</strong> (make food), <strong>flowers</strong> (reproduction), <strong>fruits</strong> (protect seeds).', fact:'The tallest plant is the coast redwood tree — over 115 metres tall!' },
+  'photosynthesis': { title:'Photosynthesis', body:'Plants make their own food using <strong>sunlight + water + CO₂</strong>. Leaves contain <strong>chlorophyll</strong> (green pigment) which captures sunlight. Formula: CO₂ + H₂O + Light → Glucose + O₂', fact:'One large tree produces enough oxygen for 4 people per day!' },
+  'pollination': { title:'Pollination', body:'Pollen moves from one flower to another by <strong>wind, insects, birds or water</strong>. Bees are the most important pollinators. Cross-pollination creates genetic diversity in plants.', fact:'One-third of all food humans eat depends on bee pollination.' },
+  'germination': { title:'Germination', body:'Seeds need <strong>water, warmth, and air</strong> to germinate. The seed coat breaks open, the radicle (root) grows down, and the plumule (shoot) grows upward toward light.', fact:'Some seeds can stay dormant for thousands of years before germinating.' },
+  'plant-reproduction': { title:'Plant Reproduction', body:'Plants reproduce <strong>sexually</strong> (seeds from flowers) or <strong>vegetatively</strong> (cuttings, runners, bulbs, spores). Mosses and ferns use spores. Flowering plants use seeds.', fact:'The lotus plant symbol is sacred in many Asian cultures and reproduces using seeds.' },
+  'leaves-and-roots': { title:'Leaves and Roots', body:'<strong>Leaves</strong>: flat surface for sunlight, stomata for gas exchange, veins carry water. <strong>Roots</strong>: fibrous (grass) or taproot (carrot). Root hairs increase absorption area.', fact:'A single rye plant can have 14 billion root hairs.' },
+  // Animals
+  'mammals': { title:'Mammals', body:'Warm-blooded, have <strong>hair/fur</strong>, breathe air, give birth to live young (mostly), feed young with <strong>milk</strong>. Examples: humans, whales, bats, dogs.', fact:'The blue whale is the largest mammal ever — heart the size of a car!' },
+  'birds': { title:'Birds', body:'Warm-blooded vertebrates with <strong>feathers, beaks, two wings</strong>. Lay hard-shelled eggs. Most can fly. Examples: eagle, penguin, ostrich, parrot.', fact:'Peregrine falcon is the fastest animal — dives at 389 km/h!' },
+  'reptiles': { title:'Reptiles', body:'Cold-blooded, covered in <strong>scales</strong>, breathe air, most lay eggs. Examples: snakes, lizards, crocodiles, turtles. Regulate body temperature through behaviour.', fact:'Crocodiles have been on Earth for 240 million years — older than dinosaurs!' },
+  'amphibians': { title:'Amphibians', body:'Cold-blooded, live both in <strong>water and on land</strong>. Moist skin for breathing. Lay eggs in water. Examples: frogs, toads, salamanders, newts.', fact:'The golden poison dart frog is the most toxic animal on Earth.' },
+  'fish': { title:'Fish', body:'Cold-blooded, live in water, breathe through <strong>gills</strong>, have <strong>scales and fins</strong>. Examples: salmon, shark, goldfish, clownfish.', fact:'The whale shark is the largest fish — up to 12 metres long but eats tiny plankton.' },
+  'insects': { title:'Insects', body:'<strong>6 legs, 3 body parts</strong> (head, thorax, abdomen), most have wings. Undergo metamorphosis. Examples: ants, butterflies, bees, beetles.', fact:'Ants can carry 10–50 times their own body weight!' },
+  'adaptation': { title:'Animal Adaptation', body:'Animals develop features to survive in their environment. <strong>Polar bear</strong>: thick fur + white colour. <strong>Camel</strong>: hump stores fat, wide feet for sand. <strong>Duck</strong>: webbed feet for swimming.', fact:'The Arctic fox changes colour — brown in summer, white in winter for camouflage.' },
+  'migration': { title:'Migration', body:'Animals travel long distances for <strong>food, warmth, or breeding</strong>. Arctic tern migrates 70,000 km per year! Birds navigate using Earth\'s magnetic field and the stars.', fact:'Monarch butterflies travel 4,500 km from Canada to Mexico every year.' },
+  // States of Matter
+  'solid': { title:'Solid', body:'Particles are <strong>tightly packed</strong> in fixed positions. Solids have a definite shape and volume. They cannot be compressed easily. Examples: ice, rock, wood, iron.', fact:'Diamond is the hardest natural solid — it scores 10 on the Mohs hardness scale.' },
+  'liquid': { title:'Liquid', body:'Particles are <strong>close together but can move</strong> around. Liquids have a definite volume but take the shape of their container. Examples: water, milk, oil, mercury.', fact:'Water is the only substance that naturally exists as solid, liquid and gas on Earth.' },
+  'gas': { title:'Gas', body:'Particles are <strong>far apart and move freely</strong>. Gases have no fixed shape or volume and fill any container. Examples: oxygen, steam, carbon dioxide, air.', fact:'Air is 78% nitrogen, 21% oxygen, and only 0.04% carbon dioxide.' },
+  'melting-freezing': { title:'Melting and Freezing', body:'<strong>Melting</strong>: solid → liquid (absorbs heat). <strong>Freezing</strong>: liquid → solid (releases heat). Water melts at 0°C. Iron melts at 1538°C. Each substance has its own melting point.', fact:'Gallium melts in your hand — its melting point is just 29.7°C!' },
+  'evaporation-condensation': { title:'Evaporation & Condensation', body:'<strong>Evaporation</strong>: liquid → gas (surface). <strong>Condensation</strong>: gas → liquid (cooling). Water vapour condenses on cold surfaces forming droplets. Both are part of the water cycle.', fact:'Sweat evaporates from skin to cool your body — this is why you sweat when hot.' },
+  'sublimation': { title:'Sublimation', body:'Solid changes directly to gas <strong>without becoming liquid</strong>. Dry ice (solid CO₂) sublimates at -78°C. Iodine also sublimates when heated. Used in freeze-drying food.', fact:'The white "smoke" from dry ice is actually water vapour condensing — not CO₂ itself!' },
+  // Forces
+  'gravity': { title:'Gravity', body:'An invisible <strong>pulling force</strong> between all objects with mass. Earth\'s gravity pulls everything toward its centre. Gravity keeps planets in orbit around the Sun. The Moon\'s gravity causes ocean tides.', fact:'On the Moon you weigh only 1/6 of your Earth weight — you could jump 6× higher!' },
+  'friction': { title:'Friction', body:'A force that <strong>opposes motion</strong> when two surfaces rub together. Rough surfaces have more friction than smooth ones. Friction generates heat. It helps us walk and cars brake.', fact:'Ice is slippery because a thin layer of water forms under pressure, reducing friction.' },
+  'magnetism': { title:'Magnetism', body:'Magnets attract <strong>iron, cobalt, and nickel</strong>. All magnets have North and South poles. Like poles repel, opposite poles attract. Earth itself is a giant magnet with magnetic poles.', fact:'MRI machines use magnets 30,000× stronger than Earth\'s magnetic field to scan your body.' },
+  'simple-machines': { title:'Simple Machines', body:'Six types: <strong>lever, wheel & axle, pulley, inclined plane, wedge, screw</strong>. They reduce the force needed to do work. Examples: scissors (lever), bicycle wheel, ramp (inclined plane).', fact:'Ancient Egyptians used simple machines to build the pyramids 4,500 years ago.' },
+  'light': { title:'Light', body:'Light travels at <strong>300,000 km per second</strong>. It travels in straight lines. It can be reflected (mirror) and refracted (bent when entering water). Prisms split white light into a rainbow spectrum.', fact:'Sunlight takes 8 minutes and 20 seconds to travel from the Sun to Earth.' },
+  'sound': { title:'Sound', body:'Sound is caused by <strong>vibrations</strong> that travel through a medium (solid, liquid or gas). Travels fastest in solids. Pitch = frequency. Volume = amplitude. Cannot travel in a vacuum.', fact:'Lightning and thunder happen at the same time — but light reaches you faster than sound.' },
+  // Water cycle
+  'evaporation': { title:'Evaporation', body:'Heat from the Sun causes water from oceans, lakes and rivers to turn into <strong>water vapour</strong> and rise into the atmosphere. Evaporation is fastest on hot, dry, windy days.', fact:'The oceans evaporate about 1.4 billion km³ of water per year.' },
+  'condensation': { title:'Condensation', body:'As water vapour rises and cools, it turns back into <strong>tiny water droplets</strong> forming clouds and fog. Clouds form when condensation occurs around tiny dust particles.', fact:'Clouds can weigh over 500,000 kg but stay up because the droplets are so light and spread out.' },
+  'precipitation': { title:'Precipitation', body:'When water droplets in clouds become too heavy, they fall as <strong>rain, snow, sleet or hail</strong>. The type depends on temperature. Raindrops fall at about 9 km/h.', fact:'The wettest place on Earth is Mawsynram, India — over 11,870 mm of rain per year!' },
+  'collection': { title:'Collection (Run-off)', body:'Precipitation collects in <strong>oceans, rivers, lakes and underground</strong> (groundwater). Plants absorb some through roots. The rest flows back to oceans, starting the cycle again.', fact:'97% of all water on Earth is saltwater in the oceans. Only 3% is freshwater.' },
+  // Rocks
+  'igneous-rocks': { title:'Igneous Rocks', body:'Formed when <strong>magma (molten rock) cools and solidifies</strong>. Intrusive (underground, slow cooling = large crystals): granite. Extrusive (surface, fast cooling = small crystals): basalt, obsidian.', fact:'The Giant\'s Causeway in Ireland is made of basalt columns formed from volcanic lava.' },
+  'sedimentary-rocks': { title:'Sedimentary Rocks', body:'Formed from <strong>layers of sediment</strong> (sand, shells, mud) compressed over millions of years. Often contain fossils. Examples: sandstone, limestone, chalk, coal.', fact:'The White Cliffs of Dover are made of chalk formed from microscopic sea creatures 70 million years ago.' },
+  'metamorphic-rocks': { title:'Metamorphic Rocks', body:'Formed when existing rocks are changed by <strong>extreme heat and pressure</strong> deep underground. Marble (from limestone), slate (from shale), quartzite (from sandstone).', fact:'Diamonds form in metamorphic conditions deep in Earth\'s mantle under extreme pressure.' },
+  'soil-types': { title:'Types of Soil', body:'<strong>Sandy soil</strong>: large particles, drains fast, not very fertile. <strong>Clay soil</strong>: tiny particles, holds water, heavy. <strong>Loam</strong>: mixture of sand, silt, clay — ideal for farming. <strong>Humus</strong>: decomposed organic matter.', fact:'It takes 1,000 years to form just 1 cm of topsoil naturally.' },
+  'erosion': { title:'Erosion', body:'The wearing away of land by <strong>wind, water, ice or gravity</strong>. River erosion carves valleys. Wind erodes deserts. Coastal erosion shapes cliffs. Plants help prevent erosion by holding soil.', fact:'The Grand Canyon was carved by the Colorado River over 5–6 million years — now 1.6 km deep.' },
+  'rock-cycle': { title:'The Rock Cycle', body:'Rocks continuously change: <strong>magma → igneous → weathering → sediment → sedimentary → heat/pressure → metamorphic → melting → magma</strong>. This cycle takes millions of years.', fact:'Rock cycles helped form all the continents and mountains we see today.' },
+  // Health
+  'balanced-diet': { title:'Balanced Diet', body:'Eat the right amounts of <strong>carbohydrates, proteins, fats, vitamins, minerals, water and fibre</strong>. Use the food pyramid as a guide. Variety is key — no single food has everything you need.', fact:'Water makes up about 60% of the human body — you need to drink 6–8 glasses per day.' },
+  'food-groups': { title:'Food Groups', body:'<strong>Carbohydrates</strong> (energy): rice, bread, pasta. <strong>Proteins</strong> (growth): meat, eggs, lentils. <strong>Fats</strong> (energy storage): butter, nuts. <strong>Vitamins & Minerals</strong> (body functions): fruits, vegetables.', fact:'Vitamin C was discovered after sailors got scurvy (gum disease) from not eating fruits on long voyages.' },
+  'personal-hygiene': { title:'Personal Hygiene', body:'Wash hands for 20 seconds with soap — especially before eating and after using the toilet. Brush teeth twice daily. Bathe regularly. Keep nails short and clean. Wear clean clothes.', fact:'Regular handwashing can reduce diarrhoea cases by 40% and respiratory infections by 20%.' },
+  'diseases-germs': { title:'Diseases and Germs', body:'Germs include <strong>bacteria, viruses, fungi and parasites</strong>. They spread through air, water, food, touch and insects. Vaccines help prevent diseases. Antibiotics fight bacterial infections.', fact:'Your body has more bacterial cells than human cells — most are helpful!' },
+  'first-aid': { title:'First Aid', body:'For <strong>cuts</strong>: clean wound, apply pressure, bandage. For <strong>burns</strong>: cool with running water for 10 min. For <strong>choking</strong>: back blows then abdominal thrusts. Always call an adult in emergencies.', fact:'The word "ambulance" is written backwards on ambulances so drivers can read it in their rearview mirror.' },
+  'exercise-sleep': { title:'Exercise and Sleep', body:'Children need <strong>at least 60 minutes of physical activity</strong> per day. Exercise strengthens heart, bones, muscles and improves mood. Children aged 6–12 need <strong>9–11 hours of sleep</strong> per night.', fact:'During sleep, your brain consolidates memories — this is why sleep improves learning!' },
+};
+
+function showSciCard(topic) {
+  const data = SCI_KNOWLEDGE[topic];
+  if (!data) return;
+  // Find the detail div for the current panel
+  const detailDivs = document.querySelectorAll('.sci-detail-card');
+  detailDivs.forEach(d => {
+    d.innerHTML = `<h3>💡 ${data.title}</h3><div>${data.body}</div><div class="fact-box">🌟 Did you know? ${data.fact}</div>`;
+    d.style.display = '';
+    d.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+}
+
+// ── SOLAR SYSTEM ──────────────────────────────
+const PLANETS = [
+  { name:'Sun',     r:28, color:'#FDB813', orbit:0,   info:'The Sun is a star. It contains 99.86% of the solar system\'s mass. Surface temperature: 5,500°C.' },
+  { name:'Mercury', r:4,  color:'#b5b5b5', orbit:60,  info:'Smallest planet. No atmosphere. Extreme temperatures: -180°C to +430°C. 88 days to orbit Sun.' },
+  { name:'Venus',   r:7,  color:'#e8cda0', orbit:95,  info:'Hottest planet at 465°C (greenhouse effect). Rotates backwards. Nearly same size as Earth.' },
+  { name:'Earth',   r:7,  color:'#4f9de8', orbit:130, info:'Our home! Only known planet with life. 71% water. One moon. Perfect distance from Sun.' },
+  { name:'Mars',    r:5,  color:'#c1440e', orbit:165, info:'The Red Planet. Has the largest volcano (Olympus Mons). Two moons. Day is 24h 37min.' },
+  { name:'Jupiter', r:16, color:'#c88b3a', orbit:225, info:'Largest planet — fits 1,300 Earths. Great Red Spot is a storm lasting 350+ years. 95 moons!' },
+  { name:'Saturn',  r:13, color:'#e8d5a3', orbit:280, info:'Has spectacular rings made of ice and rock. Least dense planet — would float in water! 146 moons.' },
+  { name:'Uranus',  r:10, color:'#7de8e8', orbit:325, info:'Rotates on its side (97.8° tilt). Ice giant. Coldest planet (-224°C). 27 moons.' },
+  { name:'Neptune', r:9,  color:'#3f54ba', orbit:360, info:'Farthest planet. Strongest winds: 2,100 km/h. 164 years to orbit Sun. 16 moons.' },
+];
+
+function drawSolarSystem() {
+  const canvas = document.getElementById('solar-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  // Background stars
+  ctx.fillStyle = '#0a0a1a';
+  ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 120; i++) {
+    ctx.fillStyle = `rgba(255,255,255,${Math.random()*0.6+0.2})`;
+    ctx.beginPath();
+    ctx.arc(Math.random()*W, Math.random()*H, Math.random()*1.2, 0, Math.PI*2);
+    ctx.fill();
+  }
+  // Draw orbits and planets
+  PLANETS.forEach((p, i) => {
+    if (i === 0) {
+      // Sun at left
+      const grd = ctx.createRadialGradient(50, H/2, 0, 50, H/2, p.r);
+      grd.addColorStop(0, '#fff7a0'); grd.addColorStop(0.4, p.color); grd.addColorStop(1, 'rgba(253,184,19,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(50, H/2, p.r, 0, Math.PI*2); ctx.fill();
+    } else {
+      // Orbit line
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(50, H/2, p.orbit, 0, Math.PI*2); ctx.stroke();
+      // Planet
+      const angle = -Math.PI / 4 * (i * 0.7);
+      const px = 50 + p.orbit * Math.cos(angle);
+      const py = H/2 + p.orbit * Math.sin(angle) * 0.45;
+      const grd = ctx.createRadialGradient(px-p.r*0.3, py-p.r*0.3, 0, px, py, p.r);
+      grd.addColorStop(0, 'white'); grd.addColorStop(0.3, p.color); grd.addColorStop(1, '#000');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(px, py, p.r, 0, Math.PI*2); ctx.fill();
+      // Saturn rings
+      if (p.name === 'Saturn') {
+        ctx.strokeStyle = 'rgba(232,213,163,0.6)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.ellipse(px, py, p.r+10, 4, 0, 0, Math.PI*2); ctx.stroke();
+      }
+      // Label
+      ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.font = '9px Nunito'; ctx.textAlign = 'center';
+      ctx.fillText(p.name, px, py + p.r + 10);
+    }
+  });
+  // Click handler
+  canvas.onclick = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (canvas.width/rect.width);
+    const my = (e.clientY - rect.top)  * (canvas.height/rect.height);
+    let found = null;
+    PLANETS.forEach((p, i) => {
+      const px = i === 0 ? 50 : 50 + p.orbit * Math.cos(-Math.PI/4*(i*0.7));
+      const py = i === 0 ? canvas.height/2 : canvas.height/2 + p.orbit * Math.sin(-Math.PI/4*(i*0.7)) * 0.45;
+      if (Math.hypot(mx-px, my-py) < p.r + 8) found = p;
+    });
+    const det = document.getElementById('solar-detail');
+    if (det) {
+      if (found) {
+        det.innerHTML = `<div style="background:var(--white);border:2px solid var(--border);border-left:4px solid #4f6ef7;border-radius:var(--r-md);padding:14px 18px;"><strong style="font-size:16px">${found.name}</strong><br><span style="font-size:14px;color:var(--text-b)">${found.info}</span></div>`;
+      } else {
+        det.innerHTML = '<div style="color:var(--text-l);font-size:13px;font-weight:600;padding:8px">👆 Click on a planet to learn about it</div>';
+      }
+    }
+  };
+  const det = document.getElementById('solar-detail');
+  if (det && !det.innerHTML) det.innerHTML = '<div style="color:var(--text-l);font-size:13px;font-weight:600;padding:8px">👆 Click on a planet to learn about it</div>';
+}
+
+// ── WATER CYCLE ───────────────────────────────
+function drawWaterCycle() {
+  const canvas = document.getElementById('water-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Sky gradient
+  const sky = ctx.createLinearGradient(0, 0, 0, H*0.6);
+  sky.addColorStop(0, '#87ceeb'); sky.addColorStop(1, '#e0f0ff');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H*0.65);
+
+  // Ground
+  const gnd = ctx.createLinearGradient(0, H*0.65, 0, H);
+  gnd.addColorStop(0, '#8b6914'); gnd.addColorStop(1, '#654321');
+  ctx.fillStyle = gnd; ctx.fillRect(0, H*0.65, W, H*0.35);
+
+  // Ocean
+  ctx.fillStyle = '#2980b9';
+  ctx.beginPath(); ctx.ellipse(100, H*0.78, 90, 32, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = 'white'; ctx.font = 'bold 13px Nunito'; ctx.textAlign = 'center';
+  ctx.fillText('Ocean', 100, H*0.78+5);
+
+  // Mountain
+  ctx.fillStyle = '#7f8c8d';
+  ctx.beginPath(); ctx.moveTo(520, H*0.65); ctx.lineTo(600, H*0.2); ctx.lineTo(680, H*0.65); ctx.fill();
+  ctx.fillStyle = 'white';
+  ctx.beginPath(); ctx.moveTo(580, H*0.22); ctx.lineTo(600, H*0.2); ctx.lineTo(620, H*0.22); ctx.fill();
+
+  // Sun
+  ctx.fillStyle = '#f9ca24';
+  ctx.beginPath(); ctx.arc(620, 45, 30, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#e58e26'; ctx.font = 'bold 12px Nunito'; ctx.textAlign = 'center';
+  ctx.fillText('☀️ Sun', 620, 48);
+
+  // Cloud
+  ctx.fillStyle = 'white';
+  [[320,70,40],[360,55,50],[400,70,40]].forEach(([x,y,r]) => { ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); });
+  ctx.fillStyle = '#555'; ctx.font = 'bold 12px Nunito';
+  ctx.fillText('☁️ Cloud', 360, 115);
+
+  // Arrows and labels
+  const arrow = (x1,y1,x2,y2,color,label,lx,ly) => {
+    ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.setLineDash([5,3]);
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); ctx.setLineDash([]);
+    const a = Math.atan2(y2-y1, x2-x1);
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-12*Math.cos(a-0.4),y2-12*Math.sin(a-0.4)); ctx.lineTo(x2-12*Math.cos(a+0.4),y2-12*Math.sin(a+0.4)); ctx.fill();
+    ctx.font = 'bold 12px Nunito'; ctx.fillStyle = color; ctx.textAlign = 'center';
+    ctx.fillText(label, lx, ly);
+  };
+  arrow(130, H*0.65, 280, 90, '#e74c3c', '① Evaporation', 180, H*0.35);
+  arrow(340, 120, 200, H*0.62, '#3498db', '③ Precipitation', 240, H*0.45);
+  arrow(460, 80, 350, 72, '#9b59b6', '② Wind / Clouds', 410, 60);
+  arrow(185, H*0.68, 110, H*0.75, '#27ae60', '④ Run-off', 130, H*0.69);
+}
+
+// ── FOOD CHAIN ────────────────────────────────
+const FOOD_CHAIN_SETS = [
+  { name:'Grassland', chain:['🌾 Grass','🐛 Caterpillar','🐦 Robin','🦅 Hawk'] },
+  { name:'Ocean',     chain:['🌿 Algae','🦐 Shrimp','🐟 Fish','🦈 Shark'] },
+  { name:'Forest',    chain:['🍂 Leaf','🐛 Worm','🐸 Frog','🐍 Snake'] },
+  { name:'Arctic',    chain:['🌱 Plankton','🐠 Small Fish','🦭 Seal','🐻‍❄️ Polar Bear'] },
+];
+
+function initFoodChain() {
+  const cont = document.getElementById('foodchain-container');
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;">';
+  FOOD_CHAIN_SETS.forEach((set, i) => {
+    html += `<button class="example-btn" onclick="showFoodChain(${i})" style="font-size:13px;padding:8px 16px;">${set.name}</button>`;
+  });
+  html += '</div><div id="foodchain-display"></div>';
+  cont.innerHTML = html;
+  showFoodChain(0);
+}
+
+function showFoodChain(idx) {
+  const set = FOOD_CHAIN_SETS[idx];
+  const el = document.getElementById('foodchain-display');
+  if (!el) return;
+  const items = set.chain.map((item, i) => {
+    const labels = ['Producer','Primary Consumer','Secondary Consumer','Apex Predator'];
+    const colors = ['var(--green-l)','var(--blue-l)','var(--amber-l)','var(--rose-l)'];
+    const borders = ['var(--green)','var(--blue)','var(--amber)','var(--rose)'];
+    return `<div style="text-align:center;"><div style="background:${colors[i]};border:2px solid ${borders[i]};border-radius:var(--r-md);padding:14px 18px;display:inline-block;min-width:120px;"><div style="font-size:28px;">${item.split(' ')[0]}</div><div style="font-size:13px;font-weight:800;color:var(--text-h);margin-top:4px;">${item.split(' ').slice(1).join(' ')}</div><div style="font-size:10px;font-weight:700;color:var(--text-m);margin-top:2px;">${labels[i]}</div></div>${i<set.chain.length-1?'<div style="font-size:24px;margin:4px 0;color:var(--text-m)">↓ eats</div>':''}</div>`;
+  }).join('');
+  el.innerHTML = `<h3 style="font-size:15px;font-weight:900;color:var(--text-h);margin-bottom:12px;">${set.name} Food Chain</h3><div style="display:flex;align-items:center;gap:0;flex-direction:column;">${items}</div><div style="margin-top:14px;padding:12px 14px;background:var(--green-l);border-radius:var(--r-sm);font-size:13px;font-weight:600;color:#15803d;">⚡ Energy flows from Sun → Producer → Consumers. Each level gets ~10% of the energy from the level below.</div>`;
+}
