@@ -8,7 +8,15 @@ let storySelText = '';
 // ── INIT STORIES ─────────────────────────────
 function initStories() {
   renderGenreFilters();
-  renderStoryGrid('all');
+  // Show grid immediately on next paint so spinner shows first
+  const loading = document.getElementById('story-loading');
+  if (loading) loading.style.display = 'flex';
+  // Yield to browser paint, then render all cards
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      renderStoryGrid('all');
+    });
+  });
 }
 
 // ── GENRE FILTER BUTTONS ──────────────────────
@@ -38,7 +46,8 @@ function filterStories(genre) {
   storyFilter = genre;
   document.querySelectorAll('.genre-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.genre === genre));
-  renderStoryGrid(genre);
+  // Render on next frame so button highlight shows immediately
+  requestAnimationFrame(() => renderStoryGrid(genre));
 }
 
 // ── STORY GRID ────────────────────────────────
@@ -58,11 +67,10 @@ function renderStoryGrid(genre) {
   if (!grid) return;
   const filtered = genre === 'all' ? STORIES : STORIES.filter(s => s.genre === genre);
 
-  grid.innerHTML = filtered.map(story => {
+  // Build all HTML in one pass then write once — fastest DOM update
+  const html = filtered.map(story => {
     const style = GENRE_CARD_STYLE[story.genre] || { bg: 'linear-gradient(135deg,#4f6ef7,#8b5cf6)', text: '#eef2ff' };
-    return `
-    <div class="story-card" onclick="openStory('${story.id}')">
-      <!-- Emoji banner header — no external images, always works -->
+    return `<div class="story-card" onclick="openStory('${story.id}')">
       <div class="story-card-banner" style="background:${style.bg};">
         <div class="story-card-emoji">${story.emoji}</div>
         <div class="story-card-genre-pill" style="color:${style.text}">${story.genre}</div>
@@ -77,6 +85,8 @@ function renderStoryGrid(genre) {
       </div>
     </div>`;
   }).join('');
+
+  grid.innerHTML = html; // single DOM write = fast
 }
 
 // ── OPEN / CLOSE STORY READER ─────────────────
