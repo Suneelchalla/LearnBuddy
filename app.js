@@ -2356,6 +2356,10 @@ document.addEventListener('keydown', e => {
 });
 
 // ── INIT ──
+// Set footer year
+const _footerYear = document.getElementById('footer-year');
+if (_footerYear) _footerYear.textContent = new Date().getFullYear();
+
 // Show home dashboard on startup
 if (typeof loadHomeStats === 'function') loadHomeStats();
 switchTab('search');
