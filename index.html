@@ -371,8 +371,8 @@
           <button class="tr-lang-btn" data-lang="zh-CN" onclick="setTranslateLang(this)">Chinese</button>
           <button class="tr-lang-btn" data-lang="ar" onclick="setTranslateLang(this)">Arabic</button>
         </div>
-        <button id="tr-open-btn" onclick="openTranslate()" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;width:100%;background:linear-gradient(135deg,#4285f4,#1a73e8);color:white;border-radius:var(--r-md);border:none;font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(66,133,244,.35);transition:all .18s;margin-bottom:12px;">🌐 Open in Google Translate</button>
-        <button id="tr-deepl-btn" onclick="openDeepL()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;width:100%;background:var(--white);color:var(--text-m);border:2px solid var(--border);border-radius:var(--r-md);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;margin-bottom:12px;">🔤 Also try DeepL</button>
+        <a id="tr-open-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:15px 20px;width:100%;background:linear-gradient(135deg,#4285f4,#1a73e8);color:white;border-radius:var(--r-md);font-family:var(--font);font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(66,133,244,.35);transition:all .18s;margin-bottom:12px;text-decoration:none;box-sizing:border-box;">🌐 Open in Google Translate</a>
+        <a id="tr-deepl-btn" href="#" target="_blank" rel="noopener noreferrer" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;width:100%;background:var(--white);color:var(--text-m);border:2px solid var(--border);border-radius:var(--r-md);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;margin-bottom:12px;text-decoration:none;box-sizing:border-box;">🔤 Also try DeepL</a>
         <div style="font-size:11px;font-weight:600;color:var(--text-l);text-align:center;">Both links open free in a new tab</div>
       </div>
     </div>
@@ -388,10 +388,10 @@
         <div class="search-for-label">Searching for</div>
         <div class="search-term-display" id="search-term">your topic</div>
         <div class="search-grid">
-          <button class="search-card g" id="sl-g" onclick="openSearchLink('g')"><div class="sc-em">🔍</div><div class="sc-title">Google</div><div class="sc-desc">Search the web</div></button>
-          <button class="search-card w" id="sl-w" onclick="openSearchLink('w')"><div class="sc-em">📖</div><div class="sc-title">Wikipedia</div><div class="sc-desc">Free encyclopedia</div></button>
-          <button class="search-card k" id="sl-k" onclick="openSearchLink('k')"><div class="sc-em">🎓</div><div class="sc-title">Khan Academy</div><div class="sc-desc">Free lessons</div></button>
-          <button class="search-card y" id="sl-y" onclick="openSearchLink('y')"><div class="sc-em">▶️</div><div class="sc-title">YouTube</div><div class="sc-desc">Kids videos</div></button>
+          <a class="search-card g" id="sl-g" href="#" target="_blank" rel="noopener noreferrer"><div class="sc-em">🔍</div><div class="sc-title">Google</div><div class="sc-desc">Search the web</div></a>
+          <a class="search-card w" id="sl-w" href="#" target="_blank" rel="noopener noreferrer"><div class="sc-em">📖</div><div class="sc-title">Wikipedia</div><div class="sc-desc">Free encyclopedia</div></a>
+          <a class="search-card k" id="sl-k" href="#" target="_blank" rel="noopener noreferrer"><div class="sc-em">🎓</div><div class="sc-title">Khan Academy</div><div class="sc-desc">Free lessons</div></a>
+          <a class="search-card y" id="sl-y" href="#" target="_blank" rel="noopener noreferrer"><div class="sc-em">▶️</div><div class="sc-title">YouTube</div><div class="sc-desc">Kids videos</div></a>
         </div>
         <div class="search-free-note">🔓 All links open free in a new tab</div>
       </div>
@@ -1056,8 +1056,8 @@
             <span id="story-selected-word" style="font-size:15px;font-weight:900;color:var(--text-h);"></span>
             <div style="flex:1"></div>
             <button class="action-btn" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('dict')">📚 Dictionary</button>
-            <button class="action-btn" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('translate')">🌍 Translate</button>
-            <button class="action-btn" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('search')">🔍 Search</button>
+            <a id="story-translate-btn" class="action-btn" style="height:28px;padding:0 10px;font-size:11px;display:inline-flex;align-items:center;text-decoration:none;" href="#" target="_blank" rel="noopener noreferrer">🌍 Translate</a>
+            <a id="story-search-btn" class="action-btn" style="height:28px;padding:0 10px;font-size:11px;display:inline-flex;align-items:center;text-decoration:none;" href="#" target="_blank" rel="noopener noreferrer">🔍 Search</a>
             <button class="action-btn primary" style="height:28px;padding:0 10px;font-size:11px" onclick="storyAction('explain')">🧠 Explain</button>
             <button class="action-btn" style="height:28px;padding:0 8px;font-size:11px" onclick="storyAction('tts')">🔊</button>
           </div>
@@ -1385,6 +1385,13 @@ function storyWordClick(word) {
   wordDisplay.textContent = word;
   bar.style.display = 'flex';
 
+  // Update anchor hrefs directly — avoids popup-blocker on GitHub Pages
+  const enc = encodeURIComponent(word);
+  const searchBtn = document.getElementById('story-search-btn');
+  const transBtn  = document.getElementById('story-translate-btn');
+  if (searchBtn) searchBtn.href = 'https://www.google.com/search?q=' + enc;
+  if (transBtn)  transBtn.href  = 'https://translate.google.com/?sl=auto&tl=ta&text=' + enc + '&op=translate';
+
   // Auto-fill the query field for the AI panel
   const qField = document.getElementById('story-q-field');
   if (qField) qField.value = word;
@@ -1395,14 +1402,6 @@ function storyAction(action) {
   const word = storySelText;
   if (!word) return;
 
-  if (action === 'search') {
-    window.open('https://www.google.com/search?q=' + encodeURIComponent(word), '_blank', 'noopener,noreferrer');
-    return;
-  }
-  if (action === 'translate') {
-    window.open('https://translate.google.com/?sl=auto&tl=ta&text=' + encodeURIComponent(word) + '&op=translate', '_blank', 'noopener,noreferrer');
-    return;
-  }
   if (action === 'dict') {
     // Reuse main dictionary lookup, show in story panel
     document.getElementById('story-ai-panel').style.display = 'flex';
