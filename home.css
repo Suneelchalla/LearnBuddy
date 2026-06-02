@@ -466,3 +466,52 @@
   transform: translateY(-4px);
   box-shadow: var(--shadow-md);
 }
+
+/* ── Science detail card ── */
+.sci-detail-card {
+  margin-top: 16px;
+  background: var(--white); border: 2px solid var(--border);
+  border-left: 4px solid var(--green);
+  border-radius: var(--r-md); padding: 18px 20px;
+  font-size: 14px; line-height: 1.8; color: var(--text-b);
+  animation: fadeUp .2s ease;
+}
+.sci-detail-card h3 { font-size:16px;font-weight:900;color:var(--text-h);margin-bottom:8px; }
+.sci-detail-card .fact-box {
+  background:var(--green-l);border-radius:var(--r-sm);
+  padding:10px 14px;margin-top:10px;font-size:13px;font-weight:600;color:#15803d;
+}
+
+/* ── Abacus ── */
+.abacus-frame {
+  display:flex; gap:8px; align-items:flex-end;
+  background:linear-gradient(180deg,#8b4513,#a0522d);
+  border-radius:12px; padding:16px 20px 12px;
+  box-shadow:0 4px 16px rgba(0,0,0,.2);
+  overflow-x:auto;
+}
+.abacus-rod {
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.abacus-rod-label {
+  font-size:10px; font-weight:800; color:rgba(255,255,255,.8);
+  margin-bottom:4px; text-align:center;
+}
+.abacus-rod-bar {
+  width:6px; background:#d4a017; border-radius:3px;
+  position:relative; display:flex; flex-direction:column;
+  align-items:center; gap:2px; padding:4px 0;
+}
+.abacus-bead {
+  width:28px; height:18px; border-radius:50%;
+  cursor:pointer; transition:all .15s;
+  border:2px solid rgba(0,0,0,.2);
+  flex-shrink:0;
+}
+.abacus-bead.active { background:linear-gradient(135deg,#f59e0b,#ef4444); box-shadow:0 2px 6px rgba(0,0,0,.3); }
+.abacus-bead.inactive { background:linear-gradient(135deg,#e0d0c0,#c4a882); }
+.abacus-bead:hover { transform:scale(1.1); }
+.abacus-divider {
+  width:100%; height:4px; background:#d4a017;
+  border-radius:2px; margin:2px 0; flex-shrink:0;
+}
