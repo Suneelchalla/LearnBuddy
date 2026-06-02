@@ -1207,7 +1207,7 @@ function renderGenreFilters() {
   if (!cont || cont.dataset.built) return;
   cont.dataset.built = '1';
 
-  const genres = ['all', ...new Set(STORIES.map(s => s.genre))].sort();
+  const genres = [...new Set(STORIES.map(s => s.genre))].sort().concat(['all']);
   const genreIcons = {
     'all': '📚', 'Indian Mythology': '🕉️', 'Indian History': '🏛️',
     'World Mythology': '🌍', 'Fables & Moral Stories': '🐾',
@@ -1216,8 +1216,8 @@ function renderGenreFilters() {
 
   cont.innerHTML = genres.map(g => {
     const icon = genreIcons[g] || '📖';
-    const label = g === 'all' ? 'All Stories' : g;
-    const count = g === 'all' ? STORIES.length : STORIES.filter(s => s.genre === g).length;
+    const label = g === 'all' ? '🌐 More Stories' : g;
+    const count = g === 'all' ? Object.values(MORE_STORY_LINKS).flat().filter((v,i,a)=>a.findIndex(x=>x.url===v.url)===i).length : STORIES.filter(s => s.genre === g).length;
     return `<button class="genre-btn${g === 'all' ? ' active' : ''}" data-genre="${g}" onclick="filterStories('${g}')">
       ${icon} ${label} <span class="genre-count">${count}</span>
     </button>`;
@@ -1228,7 +1228,48 @@ function filterStories(genre) {
   storyFilter = genre;
   document.querySelectorAll('.genre-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.genre === genre));
+
+  if (genre === 'all') {
+    // "More Stories" — show ONLY external links, no story cards
+    const grid = document.getElementById('story-grid');
+    if (grid) grid.innerHTML = renderMoreLinksAll();
+    return;
+  }
   renderStoryGrid(genre);
+}
+
+function renderMoreLinksAll() {
+  // Collect all unique links across all genres
+  const seen = new Set();
+  let html = '<div class="more-stories-section" style="grid-column:1/-1;margin-top:0;">';
+  html += '<div class="more-stories-title" style="font-size:16px">🌐 More Stories — Free Websites for Every Genre</div>';
+
+  const genreOrder = ['Indian Mythology','Indian History','World Mythology','Fables & Moral Stories','Folk Tales','Adventure','Real Life Heroes','all'];
+  const genreLabels = { all: '📚 General — All Genres' };
+
+  genreOrder.forEach(genre => {
+    const links = MORE_STORY_LINKS[genre] || [];
+    const uniqueLinks = links.filter(l => { if (seen.has(l.url)) return false; seen.add(l.url); return true; });
+    if (!uniqueLinks.length) return;
+    const label = genreLabels[genre] || genre;
+    html += `<div style="margin-bottom:18px;">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">${label}</div>
+      <div class="more-stories-grid">
+        ${uniqueLinks.map(l => `
+          <a href="${l.url}" target="_blank" rel="noopener noreferrer" class="more-story-link">
+            <span class="msl-icon">${l.icon}</span>
+            <div class="msl-body">
+              <div class="msl-name">${l.name}</div>
+              <div class="msl-desc">${l.desc}</div>
+            </div>
+            <span class="msl-arrow">↗</span>
+          </a>`).join('')}
+      </div>
+    </div>`;
+  });
+
+  html += '</div>';
+  return html;
 }
 
 // ── STORY GRID ────────────────────────────────
@@ -1267,8 +1308,8 @@ function renderStoryGrid(genre) {
   const filtered = genre === 'all' ? STORIES : STORIES.filter(s => s.genre === genre);
 
   if (filtered.length <= 16) {
-    // Small set — render all at once instantly
-    grid.innerHTML = filtered.map(makeCardHTML).join('');
+    // Small set — render all at once instantly + more links
+    grid.innerHTML = filtered.map(makeCardHTML).join('') + renderMoreLinks(genre);
     return;
   }
 
@@ -1276,10 +1317,10 @@ function renderStoryGrid(genre) {
   const FIRST = 16;
   grid.innerHTML = filtered.slice(0, FIRST).map(makeCardHTML).join('');
 
-  // Append remaining cards after browser has painted the first batch
+  // Append remaining cards + more links after browser has painted the first batch
   setTimeout(() => {
     const rest = filtered.slice(FIRST).map(makeCardHTML).join('');
-    grid.insertAdjacentHTML('beforeend', rest);
+    grid.insertAdjacentHTML('beforeend', rest + renderMoreLinks(genre));
   }, 50);
 }
 
@@ -1516,6 +1557,72 @@ function storyGoQuery() {
   document.getElementById('story-selected-word').textContent = word;
   document.getElementById('story-action-bar').style.display = 'flex';
   storyWordClick(word);
+}
+
+
+// ── MORE STORIES LINKS (free external websites by genre) ──
+const MORE_STORY_LINKS = {
+  'Indian Mythology': [
+    { name:'Amar Chitra Katha',  url:'https://www.amarchitrakatha.com/mythologies/',       desc:'Classic Indian mythology comics',         icon:'📖' },
+    { name:'Pitara Kids',        url:'https://pitara.com/fiction-for-kids/folktales/',     desc:'Indian folk & mythology tales',           icon:'🌟' },
+    { name:'Talesofpanchatantra',url:'https://www.talesofpanchatantra.com/',               desc:'Indian stories retold for children',      icon:'🕉️' },
+  ],
+  'Indian History': [
+    { name:'Know India',         url:'https://knowindia.india.gov.in/culture-and-heritage/', desc:"India's heritage and history",          icon:'🏛️' },
+    { name:'Pitara History',     url:'https://pitara.com/non-fiction-for-kids/history/',   desc:'Indian history for children',             icon:'🇮🇳' },
+    { name:'Freedom Fighters',   url:'https://pitara.com/non-fiction-for-kids/history/freedom-fighters/', desc:'Indian freedom fighters', icon:'📜' },
+  ],
+  'World Mythology': [
+    { name:'Mythology Planet',   url:'https://www.mythologyplanet.com/',                   desc:'Myths from every culture',               icon:'🌍' },
+    { name:'World History Myths',url:'https://www.worldhistory.org/mythology/',            desc:'Myths explained by historians',           icon:'⚡' },
+    { name:'Greek Myths',        url:'https://www.greekmythology.com/Myths/myths.html',    desc:'Full Greek mythology collection',         icon:'🏺' },
+  ],
+  'Fables & Moral Stories': [
+    { name:"Aesop's Fables",     url:'https://www.aesopfables.com/',                       desc:'655 Aesop fables — completely free',      icon:'🐾' },
+    { name:'Moral Stories',      url:'https://www.moralstories.org/',                      desc:'Hundreds of moral stories for kids',      icon:'🌱' },
+    { name:'SurLaLune Fairy Tales',url:'https://www.surlalunefairytales.com/',             desc:'Annotated fairy tales from the world',    icon:'✨' },
+  ],
+  'Folk Tales': [
+    { name:'World of Tales',     url:'https://www.worldoftales.com/',                      desc:'Folk tales from every country',           icon:'🌏' },
+    { name:'Folklore Archive',   url:'https://www.pitt.edu/~dash/folktexts.html',          desc:'University folklore archive',             icon:'📚' },
+    { name:'Panchatantra',       url:'https://www.ancienthistory.eu/panchatantra/',         desc:'Full Panchatantra collection',            icon:'🐘' },
+  ],
+  'Adventure': [
+    { name:'Project Gutenberg',  url:'https://www.gutenberg.org/browse/subjects/Adventure', desc:'70,000+ free classic books',             icon:'⚓' },
+    { name:'Standard Ebooks',    url:'https://standardebooks.org/subjects/adventure',      desc:'Free beautifully formatted books',        icon:'🗺️' },
+    { name:'Classic Reader',     url:'https://www.classicreader.com/',                     desc:'Classic adventure novels online',         icon:'📖' },
+  ],
+  'Real Life Heroes': [
+    { name:'Ducksters Biography', url:'https://www.ducksters.com/biography/',              desc:'Famous people biographies for children',  icon:'👤' },
+    { name:'Famous Scientists',  url:'https://www.famousscientists.org/',                  desc:'Stories of great scientists',             icon:'🔬' },
+    { name:'Biography.com',      url:'https://www.biography.com/',                         desc:'Inspiring life stories',                  icon:'🌟' },
+  ],
+  'all': [
+    { name:'Storyberries',       url:'https://www.storyberries.com/',                      desc:'Free short stories for kids',             icon:'🫐' },
+    { name:'Free Kids Books',    url:'https://freekidsbooks.org/',                         desc:'1000+ free children's books',            icon:'📚' },
+    { name:'Bedtime Stories',    url:'https://www.bedtimestories.com/',                    desc:'Stories for every age and genre',         icon:'🌙' },
+    { name:'Stories to Grow By', url:'https://www.storiestogrowby.org/',                  desc:'World folktales for children',            icon:'🌱' },
+  ]
+};
+
+function renderMoreLinks(genre) {
+  const links = MORE_STORY_LINKS[genre] || MORE_STORY_LINKS['all'];
+  const allLinks = genre !== 'all' ? [...links, ...MORE_STORY_LINKS['all']] : links;
+
+  return `<div class="more-stories-section">
+    <div class="more-stories-title">🌐 Read more ${genre === 'all' ? '' : genre + ' '}stories — free websites</div>
+    <div class="more-stories-grid">
+      ${allLinks.map(l => `
+        <a href="${l.url}" target="_blank" rel="noopener noreferrer" class="more-story-link">
+          <span class="msl-icon">${l.icon}</span>
+          <div class="msl-body">
+            <div class="msl-name">${l.name}</div>
+            <div class="msl-desc">${l.desc}</div>
+          </div>
+          <span class="msl-arrow">↗</span>
+        </a>`).join('')}
+    </div>
+  </div>`;
 }
 
 // ── REGISTER story hash route ──────────────────
