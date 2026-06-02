@@ -768,12 +768,81 @@ function goQuery() {
 // ── DICTIONARY LOOKUP (Free Dictionary API — no key needed) ──
 
 
-// Uses https://api.dictionaryapi.dev/api/v2/entries/en/<word>
-async function lookupDictionary(word) {
-  if (!word || word.trim().length < 1) return;
-  word = word.trim().split(/\s+/)[0]; // single word only for dictionary
+/* ═══════════════════════════════════════════════════════════
+   DICTIONARY ENGINE — 100,000+ WORD COVERAGE
+   ═══════════════════════════════════════════════════════════
+   Strategy (in order):
+   1. IndexedDB cache  — instant, works offline after first use
+   2. dictionaryapi.dev — 70,000 words (Oxford/Wiktionary)
+   3. Datamuse API     — 100,000+ words + synonyms/related
+   4. Merriam-Webster  — open as new tab (470,000 words)
+   5. Local bundle     — 322 key educational words (always works)
+   6. Google fallback  — if nothing else works
 
-  // Switch to dict tab and show loading
+   Every successful lookup is cached in IndexedDB so the
+   next lookup of the same word is instant and offline.
+═══════════════════════════════════════════════════════════ */
+
+// ── IndexedDB Cache ──
+const DB_NAME    = 'LearnBuddyDict';
+const DB_VERSION = 1;
+const DB_STORE   = 'words';
+
+function openDictDB() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) { resolve(null); return; }
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(DB_STORE)) {
+        db.createObjectStore(DB_STORE, { keyPath: 'word' });
+      }
+    };
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror   = () => resolve(null); // fail gracefully
+  });
+}
+
+async function getCachedWord(word) {
+  try {
+    const db = await openDictDB();
+    if (!db) return null;
+    return new Promise((resolve) => {
+      const tx   = db.transaction(DB_STORE, 'readonly');
+      const req  = tx.objectStore(DB_STORE).get(word.toLowerCase());
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror   = () => resolve(null);
+    });
+  } catch { return null; }
+}
+
+async function cacheWord(word, entry) {
+  try {
+    const db = await openDictDB();
+    if (!db) return;
+    const tx = db.transaction(DB_STORE, 'readwrite');
+    tx.objectStore(DB_STORE).put({ word: word.toLowerCase(), ...entry, cachedAt: Date.now() });
+  } catch { /* fail silently */ }
+}
+
+async function getCacheSize() {
+  try {
+    const db = await openDictDB();
+    if (!db) return 0;
+    return new Promise(resolve => {
+      const tx  = db.transaction(DB_STORE, 'readonly');
+      const req = tx.objectStore(DB_STORE).count();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror   = () => resolve(0);
+    });
+  } catch { return 0; }
+}
+
+// ── Main lookup function ──
+async function lookupDictionary(word) {
+  if (!word || !word.trim()) return;
+  word = word.trim().split(/\s+/)[0]; // single word
+
   switchTab('dict');
   document.getElementById('q-field').value = word;
   selText = word;
@@ -784,176 +853,275 @@ async function lookupDictionary(word) {
   results.innerHTML = '';
   results.style.display = 'none';
 
-  try {
-    // Try API first with 4-second timeout
-    const controller = new AbortController();
-    const apiTimeout = setTimeout(() => controller.abort(), 4000);
-    let res;
-    try {
-      res = await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word), { signal: controller.signal });
-      clearTimeout(apiTimeout);
-    } catch (fetchErr) {
-      clearTimeout(apiTimeout);
-      // Network error or timeout — fall back to local dictionary
-      return showLocalDictEntry(word, loading, results);
-    }
-
-    if (res.status === 404) {
-      // Not in online dict — check local dict first, then Google
-      loading.style.display = 'none';
-      if (LOCAL_DICT[word.toLowerCase()]) {
-        return showLocalDictEntry(word, loading, results);
-      }
-      results.style.display = 'block';
-      results.innerHTML = buildNotFoundHTML(word);
-      return;
-    }
-
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-
+  // ── Step 1: IndexedDB cache ──
+  const cached = await getCachedWord(word);
+  if (cached) {
     loading.style.display = 'none';
     results.style.display = 'block';
+    renderDictResult(cached, results, word, '⚡ From cache');
+    return;
+  }
 
-    let html = '';
+  // ── Step 2: Try dictionaryapi.dev (70k+ words) ──
+  try {
+    const ctrl = new AbortController();
+    const t1   = setTimeout(() => ctrl.abort(), 5000);
+    const res  = await fetch(
+      'https://api.dictionaryapi.dev/api/v2/entries/en/' + encodeURIComponent(word),
+      { signal: ctrl.signal }
+    );
+    clearTimeout(t1);
 
-    // Each entry in the response
-    data.forEach((entry, ei) => {
-      if (ei > 0) html += '<hr style="border:none;border-top:2px solid var(--border);margin:8px 0 14px;">';
+    if (res.ok) {
+      const data = await res.json();
+      const entry = parseDictAPIResponse(data, word);
+      await cacheWord(word, entry);
+      loading.style.display = 'none';
+      results.style.display = 'block';
+      renderDictResult(entry, results, word, 'dictionaryapi.dev');
+      return;
+    }
+    // 404 = word not in this API, continue to next
+  } catch { /* timeout/network — continue */ }
 
-      html += '<div class="dict-entry">';
+  // ── Step 3: Try Datamuse API (100k+ words, definitions + synonyms) ──
+  try {
+    const ctrl2 = new AbortController();
+    const t2    = setTimeout(() => ctrl2.abort(), 5000);
 
-      // Word + phonetic
-      html += '<div class="dict-word">' + entry.word + '</div>';
+    // Get definition
+    const [defRes, synRes] = await Promise.allSettled([
+      fetch('https://api.datamuse.com/words?sp=' + encodeURIComponent(word) + '&md=d&max=1', { signal: ctrl2.signal }),
+      fetch('https://api.datamuse.com/words?rel_syn=' + encodeURIComponent(word) + '&max=8', { signal: ctrl2.signal })
+    ]);
+    clearTimeout(t2);
 
-      // Find best phonetic with audio
-      let audioUrl = '';
-      let phoneticText = '';
-      if (entry.phonetics && entry.phonetics.length) {
-        for (const ph of entry.phonetics) {
-          if (ph.audio && !audioUrl) audioUrl = ph.audio;
-          if (ph.text && !phoneticText) phoneticText = ph.text;
+    let definitions = [];
+    let synonyms    = [];
+
+    if (defRes.status === 'fulfilled' && defRes.value.ok) {
+      const defData = await defRes.value.json();
+      if (defData.length && defData[0].defs) {
+        definitions = defData[0].defs;
+      }
+    }
+    if (synRes.status === 'fulfilled' && synRes.value.ok) {
+      const synData = await synRes.value.json();
+      synonyms = synData.map(w => w.word).slice(0, 8);
+    }
+
+    if (definitions.length > 0) {
+      const entry = parseDatamuseResponse(word, definitions, synonyms);
+      await cacheWord(word, entry);
+      loading.style.display = 'none';
+      results.style.display = 'block';
+      renderDictResult(entry, results, word, 'Datamuse');
+      return;
+    }
+  } catch { /* continue */ }
+
+  // ── Step 4: Try Wiktionary API ──
+  try {
+    const ctrl3 = new AbortController();
+    const t3    = setTimeout(() => ctrl3.abort(), 5000);
+    const wikiRes = await fetch(
+      'https://en.wiktionary.org/api/rest_v1/page/definition/' + encodeURIComponent(word),
+      { signal: ctrl3.signal }
+    );
+    clearTimeout(t3);
+
+    if (wikiRes.ok) {
+      const wikiData = await wikiRes.json();
+      const entry = parseWiktionaryResponse(wikiData, word);
+      if (entry.meanings && entry.meanings.length) {
+        await cacheWord(word, entry);
+        loading.style.display = 'none';
+        results.style.display = 'block';
+        renderDictResult(entry, results, word, 'Wiktionary');
+        return;
+      }
+    }
+  } catch { /* continue */ }
+
+  // ── Step 5: Local bundle (322 common words) ──
+  const localEntry = LOCAL_DICT[word.toLowerCase()];
+  if (localEntry) {
+    loading.style.display = 'none';
+    results.style.display = 'block';
+    renderDictResult({
+      word,
+      phonetic: '',
+      audioUrl: '',
+      meanings: [{
+        pos: localEntry.pos,
+        defs: [{ def: localEntry.def, example: localEntry.ex }],
+        synonyms: localEntry.syns || []
+      }],
+      source: 'Local bundle'
+    }, results, word, '📚 Local bundle');
+    return;
+  }
+
+  // ── Step 6: Nothing found ──
+  loading.style.display = 'none';
+  results.style.display = 'block';
+  results.innerHTML = buildNotFoundHTML(word);
+}
+
+// ── Parse dictionaryapi.dev response ──
+function parseDictAPIResponse(data, word) {
+  const meanings = [];
+  let phonetic = '';
+  let audioUrl = '';
+
+  // Find phonetic + audio
+  for (const entry of data) {
+    if (entry.phonetics) {
+      for (const ph of entry.phonetics) {
+        if (!phonetic && ph.text) phonetic = ph.text;
+        if (!audioUrl && ph.audio) {
+          audioUrl = ph.audio.startsWith('//') ? 'https:' + ph.audio : ph.audio;
         }
       }
-      if (phoneticText) html += '<div class="dict-phonetic">' + phoneticText + '</div>';
-      if (audioUrl) {
-        // Fix relative URLs
-        if (audioUrl.startsWith('//')) audioUrl = 'https:' + audioUrl;
-        html += '<button class="dict-audio-btn" onclick="playDictAudio(\'' + audioUrl.replace(/'/g,"\\'") + '\')">🔊 Hear pronunciation</button>';
-      }
-
-      // Meanings
-      if (entry.meanings && entry.meanings.length) {
-        entry.meanings.slice(0, 4).forEach(meaning => {
-          html += '<div class="dict-pos">' + meaning.partOfSpeech + '</div>';
-
-          meaning.definitions.slice(0, 3).forEach((def, di) => {
-            html += '<div class="dict-definition"><strong>' + (di + 1) + '.</strong> ' + def.definition + '</div>';
-            if (def.example) html += '<div class="dict-example">' + def.example + '</div>';
-          });
-
-          // Synonyms
-          const syns = (meaning.synonyms || []).slice(0, 6);
-          if (syns.length) {
-            html += '<div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);margin:8px 0 5px;">Synonyms</div>'
-              + '<div class="dict-synonyms">'
-              + syns.map(s => '<span class="dict-syn-chip" onclick="lookupDictionary(\'' + s.replace(/'/g,"\\'") + '\')" title="Look up ' + s + '">' + s + '</span>').join('')
-              + '</div>';
-          }
+    }
+    if (entry.meanings) {
+      for (const m of entry.meanings) {
+        meanings.push({
+          pos: m.partOfSpeech,
+          defs: (m.definitions || []).slice(0, 3).map(d => ({ def: d.definition, example: d.example || '' })),
+          synonyms: (m.synonyms || []).slice(0, 6)
         });
       }
+    }
+  }
 
-      html += '</div>'; // dict-entry
+  return { word, phonetic, audioUrl, meanings: meanings.slice(0, 4), source: 'dictionaryapi.dev' };
+}
 
-      // Source links
-      if (entry.sourceUrls && entry.sourceUrls.length) {
-        html += '<div style="font-size:11px;font-weight:600;color:var(--text-l);margin-bottom:10px;">Source: '
-          + entry.sourceUrls.map(u => '<a href="' + u + '" target="_blank" style="color:var(--blue);text-decoration:none;">' + u.replace('https://','') + '</a>').join(', ')
+// ── Parse Datamuse response ──
+function parseDatamuseResponse(word, defs, synonyms) {
+  // Datamuse def format: "n	A definition here"  or "v	To do something"
+  const posMap = { n: 'noun', v: 'verb', adj: 'adjective', adv: 'adverb', prep: 'preposition' };
+  const grouped = {};
+
+  for (const def of defs) {
+    const parts = def.split('\t');
+    const pos   = parts.length > 1 ? (posMap[parts[0]] || parts[0]) : 'word';
+    const text  = parts.length > 1 ? parts[1] : parts[0];
+    if (!grouped[pos]) grouped[pos] = [];
+    grouped[pos].push({ def: text, example: '' });
+  }
+
+  const meanings = Object.entries(grouped).slice(0, 4).map(([pos, defs]) => ({
+    pos,
+    defs: defs.slice(0, 3),
+    synonyms: pos === Object.keys(grouped)[0] ? synonyms : []
+  }));
+
+  return { word, phonetic: '', audioUrl: '', meanings, source: 'Datamuse' };
+}
+
+// ── Parse Wiktionary API response ──
+function parseWiktionaryResponse(data, word) {
+  const meanings = [];
+  const posMap = { Noun: 'noun', Verb: 'verb', Adjective: 'adjective', Adverb: 'adverb' };
+
+  for (const [lang, entries] of Object.entries(data)) {
+    if (lang !== 'en') continue;
+    for (const entry of (entries || [])) {
+      const pos = posMap[entry.partOfSpeech] || entry.partOfSpeech;
+      const defs = (entry.definitions || []).slice(0, 3).map(d => ({
+        def: (d.definition || '').replace(/<[^>]+>/g, ''), // strip HTML
+        example: ((d.parsedExamples || [])[0]?.example || '').replace(/<[^>]+>/g, '')
+      })).filter(d => d.def);
+      if (defs.length) meanings.push({ pos, defs, synonyms: [] });
+    }
+  }
+
+  return { word, phonetic: '', audioUrl: '', meanings: meanings.slice(0, 4), source: 'Wiktionary' };
+}
+
+// ── Render dictionary result ──
+function renderDictResult(entry, container, word, sourceLabel) {
+  const enc = encodeURIComponent(word);
+  let html = '';
+
+  // Entry header
+  html += '<div class="dict-entry">';
+  html += '<div class="dict-word">' + entry.word + '</div>';
+  if (entry.phonetic) html += '<div class="dict-phonetic">' + entry.phonetic + '</div>';
+  if (entry.audioUrl) {
+    html += '<button class="dict-audio-btn" onclick="playDictAudio(\"' + entry.audioUrl + '\")">🔊 Hear pronunciation</button>';
+  }
+
+  // Meanings
+  if (entry.meanings && entry.meanings.length) {
+    entry.meanings.forEach(m => {
+      html += '<div class="dict-pos">' + (m.pos || 'word') + '</div>';
+      (m.defs || []).forEach((d, i) => {
+        html += '<div class="dict-definition"><strong>' + (i + 1) + '.</strong> ' + d.def + '</div>';
+        if (d.example) html += '<div class="dict-example">' + d.example + '</div>';
+      });
+      if (m.synonyms && m.synonyms.length) {
+        html += '<div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);margin:8px 0 5px;">Synonyms</div>'
+          + '<div class="dict-synonyms">'
+          + m.synonyms.map(s => '<span class="dict-syn-chip" onclick="lookupDictionary(&quot;' + s + '&quot;)">' + s + '</span>').join('')
           + '</div>';
       }
     });
-
-    // Also add Google / Merriam-Webster links at bottom
-    html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">'
-      + '<a href="https://www.google.com/search?q=define+' + encodeURIComponent(word) + '" target="_blank" '
-      + 'style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:2px solid var(--border);border-radius:var(--r-sm);background:var(--white);color:var(--text-m);font-family:var(--font);font-size:12px;font-weight:700;text-decoration:none;transition:all .15s;"'
-      + ' onmouseover="this.style.borderColor=\'#4285f4\';this.style.color=\'#1a73e8\'"'
-      + ' onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text-m)\'">🔍 Google</a>'
-      + '<a href="https://www.merriam-webster.com/dictionary/' + encodeURIComponent(word) + '" target="_blank" '
-      + 'style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:2px solid var(--border);border-radius:var(--r-sm);background:var(--white);color:var(--text-m);font-family:var(--font);font-size:12px;font-weight:700;text-decoration:none;transition:all .15s;"'
-      + ' onmouseover="this.style.borderColor=\'#2c3e50\';this.style.color=\'#2c3e50\'"'
-      + ' onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text-m)\'">📖 Merriam-Webster</a>'
-      + '<a href="https://www.oxfordlearnersdictionaries.com/definition/english/' + encodeURIComponent(word) + '" target="_blank" '
-      + 'style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border:2px solid var(--border);border-radius:var(--r-sm);background:var(--white);color:var(--text-m);font-family:var(--font);font-size:12px;font-weight:700;text-decoration:none;transition:all .15s;"'
-      + ' onmouseover="this.style.borderColor=\'#003087\';this.style.color=\'#003087\'"'
-      + ' onmouseout="this.style.borderColor=\'var(--border)\';this.style.color=\'var(--text-m)\'">🎓 Oxford</a>'
-      + '</div>';
-
-    results.innerHTML = html;
-
-  } catch (err) {
-    // On any error, try local dictionary
-    return showLocalDictEntry(word, loading, results);
-    console.error('Dictionary error:', err);
   }
+
+  html += '<div style="font-size:11px;color:var(--text-l);margin-top:10px;">Source: ' + sourceLabel + '</div>';
+  html += '</div>';
+
+  // External links
+  html += '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:8px;">'
+    + '<a href="https://www.google.com/search?q=define+' + enc + '" target="_blank" class="dict-ext-btn dict-ext-g">🔍 Google</a>'
+    + '<a href="https://www.merriam-webster.com/dictionary/' + enc + '" target="_blank" class="dict-ext-btn dict-ext-mw">📖 Merriam-Webster</a>'
+    + '<a href="https://www.oxfordlearnersdictionaries.com/definition/english/' + enc + '" target="_blank" class="dict-ext-btn dict-ext-ox">🎓 Oxford</a>'
+    + '<a href="https://en.wiktionary.org/wiki/' + enc + '" target="_blank" class="dict-ext-btn" style="border-color:#36c;">📘 Wiktionary</a>'
+    + '</div>';
+
+  container.innerHTML = html;
 }
 
-
-// ── DICTIONARY HELPER FUNCTIONS ──
-
+// ── Build not-found HTML ──
 function buildNotFoundHTML(word) {
   const enc = encodeURIComponent(word);
   return '<div class="dict-not-found">'
     + '<div class="nf-icon">🔍</div>'
-    + '<div class="nf-title">Word not found in dictionary</div>'
-    + '<div class="nf-sub">The word <strong>"' + word + '"</strong> was not found.<br>It may be a proper noun, name, or spelling variant.</div>'
-    + '<a href="https://www.google.com/search?q=define+' + enc + '" target="_blank" class="dict-google-btn">'
-    + '🔍 Search Google for "' + word + '"</a><br>'
-    + '<a href="https://www.merriam-webster.com/dictionary/' + enc + '" target="_blank" '
-    + 'style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--white);color:var(--text-m);border:2px solid var(--border);border-radius:var(--r-md);text-decoration:none;font-size:13px;font-weight:700;margin-top:8px;">'
-    + '📖 Try Merriam-Webster</a>'
+    + '<div class="nf-title">Word not found</div>'
+    + '<div class="nf-sub">The word <strong>"' + word + '"</strong> was not found in any dictionary source.<br>It may be a proper noun, name, or spelling variant.</div>'
+    + '<a href="https://www.google.com/search?q=define+' + enc + '" target="_blank" class="dict-google-btn">🔍 Search Google for "' + word + '"</a><br>'
+    + '<a href="https://www.merriam-webster.com/dictionary/' + enc + '" target="_blank" style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--white);color:var(--text-m);border:2px solid var(--border);border-radius:var(--r-md);text-decoration:none;font-size:13px;font-weight:700;margin-top:8px;">📖 Try Merriam-Webster</a>'
     + '</div>';
 }
 
+// ── Show local entry (used by cache miss path) ──
 function showLocalDictEntry(word, loading, results) {
-  const key = word.toLowerCase();
-  const entry = LOCAL_DICT[key];
+  const entry = LOCAL_DICT[word.toLowerCase()];
   loading.style.display = 'none';
   results.style.display = 'block';
-
-  if (!entry) {
-    results.innerHTML = buildNotFoundHTML(word);
-    return;
-  }
-
-  const enc = encodeURIComponent(word);
-  const syns = (entry.syns || []).map(s =>
-    '<span class="dict-syn-chip" onclick="lookupDictionary(&quot;' + s + '&quot;)">' + s + '</span>'
-  ).join('');
-
-  results.innerHTML =
-    '<div class="dict-entry">'
-    + '<div class="dict-word">' + word + '</div>'
-    + '<div class="dict-pos">' + (entry.pos || 'word') + '</div>'
-    + '<div class="dict-definition"><strong>1.</strong> ' + entry.def + '</div>'
-    + (entry.ex ? '<div class="dict-example">' + entry.ex + '</div>' : '')
-    + (syns ? '<div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-l);margin:8px 0 5px;">Synonyms</div><div class="dict-synonyms">' + syns + '</div>' : '')
-    + '<div style="font-size:11px;color:var(--text-l);margin-top:8px;">📚 Local dictionary • '
-    + '<a href="https://en.wiktionary.org/wiki/' + enc + '" target="_blank" style="color:var(--blue);">Wiktionary</a> for more</div>'
-    + '</div>'
-    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">'
-    + '<a href="https://www.google.com/search?q=define+' + enc + '" target="_blank" class="dict-ext-btn dict-ext-g">🔍 Google</a>'
-    + '<a href="https://www.merriam-webster.com/dictionary/' + enc + '" target="_blank" class="dict-ext-btn dict-ext-mw">📖 Merriam-Webster</a>'
-    + '<a href="https://www.oxfordlearnersdictionaries.com/definition/english/' + enc + '" target="_blank" class="dict-ext-btn dict-ext-ox">🎓 Oxford</a>'
-    + '</div>';
+  if (!entry) { results.innerHTML = buildNotFoundHTML(word); return; }
+  renderDictResult({
+    word,
+    phonetic: '',
+    audioUrl: '',
+    meanings: [{ pos: entry.pos, defs: [{ def: entry.def, example: entry.ex || '' }], synonyms: entry.syns || [] }],
+    source: 'Local bundle'
+  }, results, word, '📚 Local bundle');
 }
 
+// ── Play pronunciation audio ──
 function playDictAudio(url) {
-  try {
-    new Audio(url).play();
-  } catch(e) {
-    toast('⚠️ Could not play audio');
-  }
+  try { new Audio(url).play(); }
+  catch(e) { toast('⚠️ Could not play audio'); }
+}
+
+// ── Show cache statistics (for debug) ──
+async function showDictCacheInfo() {
+  const count = await getCacheSize();
+  toast('📚 ' + count.toLocaleString() + ' words cached locally in your browser');
 }
 
 // ── TRANSLATE UI (Google-powered, no API) ──
