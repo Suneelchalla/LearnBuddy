@@ -863,9 +863,9 @@
   position: relative;
   z-index: 100;
   width: 100%;
-  max-width: 680px;
+  max-width: 960px;
   margin: -18px auto 0;
-  padding: 0 20px;
+  padding: 0 24px;
   box-sizing: border-box;
 }
 
@@ -880,7 +880,7 @@
   padding: 8px 14px 8px 10px;
   cursor: pointer;
   transition: all .2s;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   overflow: visible;
   box-shadow: 0 2px 12px rgba(79,110,247,.10);
   backdrop-filter: blur(4px);
@@ -931,11 +931,11 @@
   font-size: 13px;
   color: #475569;
   font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
   flex: 1;
-  min-width: 0;
+  min-width: 160px;
+  line-height: 1.5;
 }
 .wotd-pill-speak, .wotd-pill-refresh {
   background: none;
@@ -962,8 +962,8 @@
 /* ── Expanded panel ── */
 .wotd-panel {
   position: absolute;
-  left: 20px;
-  right: 20px;
+  left: 24px;
+  right: 24px;
   z-index: 200;
   background: #fff;
   border: 1.5px solid rgba(79,110,247,.25);
@@ -1093,8 +1093,11 @@
 
 /* Responsive */
 @media (max-width: 540px) {
-  .wotd-pill-def  { display: none; }
+  .wotd-strip     { padding: 0 12px; }
+  .wotd-pill      { border-radius: 16px; padding: 8px 12px; }
+  .wotd-pill-def  { font-size: 12px; min-width: 100%; order: 10; }
   .wotd-pill-sep  { display: none; }
   .wotd-pill-word { font-size: 14px; }
+  .wotd-panel     { left: 12px; right: 12px; }
   .wotd-panel-emoji { font-size: 32px; }
 }
