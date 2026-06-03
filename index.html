@@ -1217,6 +1217,52 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════
+     ONBOARDING MODAL — shown only on first visit
+══════════════════════════════════════════════ -->
+<div id="onboarding-overlay" style="display:none">
+  <div class="ob-backdrop"></div>
+  <div class="ob-card" id="ob-card">
+
+    <!-- Step 1: Name + Class form -->
+    <div id="ob-step-form">
+      <div class="ob-emoji-row">📚✨🎓</div>
+      <h2 class="ob-title">Welcome to LearnBuddy!</h2>
+      <p class="ob-sub">Let's get to know you before we start the adventure.</p>
+
+      <div class="ob-field">
+        <label class="ob-label" for="ob-name-inp">Your Name</label>
+        <input class="ob-inp" id="ob-name-inp" type="text" placeholder="e.g. Murari" maxlength="30" autocomplete="off">
+      </div>
+
+      <div class="ob-field">
+        <label class="ob-label">Your Class</label>
+        <div class="ob-class-grid" id="ob-class-grid">
+          <!-- 1st to 10th -->
+        </div>
+      </div>
+
+      <button class="ob-submit-btn" id="ob-submit-btn" onclick="obSubmit()" disabled>
+        Let's Go! 🚀
+      </button>
+      <p class="ob-privacy">🔒 Saved only on your device — never uploaded anywhere.</p>
+    </div>
+
+    <!-- Step 2: Welcome splash -->
+    <div id="ob-step-welcome" style="display:none">
+      <div class="ob-welcome-emoji" id="ob-welcome-emoji">🎉</div>
+      <h2 class="ob-welcome-name" id="ob-welcome-name">Hi Murari!</h2>
+      <p class="ob-welcome-class" id="ob-welcome-class">Class 3 Explorer</p>
+      <p class="ob-welcome-msg" id="ob-welcome-msg">Your learning adventure is about to begin!</p>
+      <div class="ob-sparkles" id="ob-sparkles"></div>
+      <button class="ob-start-btn" onclick="obStart()">
+        🌟 Start Exploring LearnBuddy!
+      </button>
+    </div>
+
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
