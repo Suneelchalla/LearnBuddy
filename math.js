@@ -1885,3 +1885,16 @@ function refreshWOTD() {
   if (qw) qw.style.display = 'none';
   fetchAndRenderWOTD(newWord);
 }
+
+// ── Close WOTD panel when clicking outside it ──
+document.addEventListener('click', function(e) {
+  if (!wotdOpen) return;
+  const section = document.getElementById('wotd-section');
+  if (section && !section.contains(e.target)) {
+    wotdOpen = false;
+    const panel = document.getElementById('wotd-panel');
+    const pill  = document.getElementById('wotd-pill');
+    if (panel) panel.style.display = 'none';
+    if (pill)  pill.classList.remove('open');
+  }
+}, true); // capture phase — fires even if child called stopPropagation
