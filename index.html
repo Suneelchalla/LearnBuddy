@@ -19,6 +19,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="home.css">
+  <link rel="stylesheet" href="typing.css">
 </head>
 <body>
 
@@ -201,6 +202,22 @@
       <div class="sc-arrow">→</div>
     </a>
 
+    <!-- ⌨️ Typing -->
+    <a class="subject-card" href="#typing" onclick="openSubject('typing');return false;" style="--card-color:#06b6d4;--card-bg:linear-gradient(135deg,#ecfeff,#cffafe);text-decoration:none;color:inherit;">
+      <div class="sc-icon-wrap" style="background:linear-gradient(135deg,#06b6d4,#3b82f6)">⌨️</div>
+      <div class="sc-content">
+        <div class="sc-title">Typing Practice</div>
+        <div class="sc-desc">Learn touch typing from scratch — home row, full keyboard, timed tests and speed challenges</div>
+        <div class="sc-tags">
+          <span class="sc-tag">Beginner</span>
+          <span class="sc-tag">Intermediate</span>
+          <span class="sc-tag">Advanced</span>
+          <span class="sc-tag">Timed Tests</span>
+        </div>
+      </div>
+      <div class="sc-arrow">→</div>
+    </a>
+
   </div><!-- end subjects-grid -->
 
   <!-- Quick stats bar -->
@@ -242,6 +259,7 @@
           <a href="#language" onclick="openSubject('language');return false;" class="footer-link">🌍 Languages</a>
           <a href="#stories"  onclick="openSubject('stories');return false;"  class="footer-link">📖 Stories</a>
           <a href="#notebook" onclick="openSubject('notebook');return false;" class="footer-link">📒 My Notebook</a>
+          <a href="#typing"   onclick="openSubject('typing');return false;"   class="footer-link">⌨️ Typing Practice</a>
         </div>
         <div class="footer-col">
           <div class="footer-col-title">Stories by Genre</div>
@@ -1149,6 +1167,49 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════
+     TYPING PRACTICE WORKSPACE
+══════════════════════════════════════════════ -->
+<div id="workspace-typing" class="workspace" style="display:none">
+  <div class="typing-shell">
+
+    <!-- Sidebar navigation -->
+    <div class="typing-sidebar">
+      <div class="typing-sidebar-title">⌨️ Typing</div>
+
+      <div class="typing-nav-section">Menu</div>
+      <button class="typing-nav-btn active" id="tnav-overview" data-tab="overview" onclick="typingTab('overview')">
+        🏠 <span>Overview</span>
+      </button>
+      <button class="typing-nav-btn" id="tnav-progress" data-tab="progress" onclick="typingTab('progress')">
+        📊 <span>My Progress</span>
+      </button>
+
+      <div class="typing-nav-section">Levels</div>
+      <button class="typing-nav-btn" id="tnav-beginner" data-tab="beginner" onclick="typingTab('beginner')">
+        🟢 <span>Beginner</span> <span class="tnb-progress" id="tnb-prog-beginner"></span>
+      </button>
+      <button class="typing-nav-btn" id="tnav-medium" data-tab="medium" onclick="typingTab('medium')">
+        🟡 <span>Intermediate</span> <span class="tnb-progress" id="tnb-prog-medium"></span>
+      </button>
+      <button class="typing-nav-btn" id="tnav-advanced" data-tab="advanced" onclick="typingTab('advanced')">
+        🔴 <span>Advanced</span> <span class="tnb-progress" id="tnb-prog-advanced"></span>
+      </button>
+    </div>
+
+    <!-- Main panels -->
+    <div class="typing-main">
+      <div id="typing-overview"  class="typing-panel"></div>
+      <div id="typing-beginner"  class="typing-panel" style="display:none"></div>
+      <div id="typing-medium"    class="typing-panel" style="display:none"></div>
+      <div id="typing-advanced"  class="typing-panel" style="display:none"></div>
+      <div id="typing-progress"  class="typing-panel" style="display:none"></div>
+      <div id="typing-session"   class="typing-panel" style="display:none"></div>
+    </div>
+
+  </div>
+</div>
+
 <!-- ══ OVERLAYS ══ -->
 <!-- ══ OVERLAYS (shared across workspaces) ══ -->
 
@@ -1270,6 +1331,7 @@
 <script src="app.js"></script>
 <script src="math.js"></script>
 <script src="stories.js" defer></script>
+<script src="typing.js" defer></script>
 <script defer>
 /* LearnBuddy — Stories Workspace UI Logic */
 
