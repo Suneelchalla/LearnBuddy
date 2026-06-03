@@ -1101,3 +1101,249 @@
   .wotd-panel     { left: 12px; right: 12px; }
   .wotd-panel-emoji { font-size: 32px; }
 }
+
+/* ══════════════════════════════════════════════
+   ONBOARDING MODAL
+══════════════════════════════════════════════ */
+#onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.ob-backdrop {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(79,110,247,.85) 0%, rgba(139,92,246,.85) 50%, rgba(236,72,153,.75) 100%);
+  backdrop-filter: blur(6px);
+}
+.ob-card {
+  position: relative;
+  z-index: 1;
+  background: #fff;
+  border-radius: 28px;
+  padding: 36px 32px 28px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 24px 64px rgba(79,110,247,.35), 0 0 0 1px rgba(255,255,255,.3);
+  animation: ob-pop .4s cubic-bezier(.34,1.56,.64,1);
+  overflow: hidden;
+}
+@keyframes ob-pop {
+  from { opacity:0; transform: scale(.82) translateY(24px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+
+/* Step 1 — form */
+.ob-emoji-row {
+  font-size: 36px;
+  text-align: center;
+  margin-bottom: 12px;
+  letter-spacing: 8px;
+  animation: ob-bounce 1.2s ease infinite alternate;
+}
+@keyframes ob-bounce {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-6px); }
+}
+.ob-title {
+  font-size: 24px;
+  font-weight: 900;
+  color: #1e293b;
+  text-align: center;
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+.ob-sub {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.ob-field { margin-bottom: 18px; }
+.ob-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+.ob-inp {
+  width: 100%;
+  padding: 13px 16px;
+  border: 2.5px solid #e2e8f0;
+  border-radius: 14px;
+  font-family: var(--font, 'Nunito', sans-serif);
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  outline: none;
+  transition: border-color .18s, box-shadow .18s;
+  box-sizing: border-box;
+}
+.ob-inp:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+}
+.ob-inp::placeholder { color: #cbd5e1; font-weight: 600; }
+
+/* Class grid */
+.ob-class-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.ob-class-btn {
+  padding: 9px 4px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8faff;
+  font-family: var(--font, 'Nunito', sans-serif);
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+  cursor: pointer;
+  transition: all .15s;
+  text-align: center;
+}
+.ob-class-btn:hover {
+  border-color: #a5b4fc;
+  background: #eef2ff;
+  color: #4f6ef7;
+}
+.ob-class-btn.selected {
+  border-color: #6366f1;
+  background: linear-gradient(135deg,#6366f1,#8b5cf6);
+  color: #fff;
+  transform: scale(1.06);
+  box-shadow: 0 4px 12px rgba(99,102,241,.35);
+}
+
+/* Submit button */
+.ob-submit-btn {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg,#4f6ef7,#8b5cf6);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-family: var(--font, 'Nunito', sans-serif);
+  font-size: 17px;
+  font-weight: 900;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all .2s;
+  box-shadow: 0 6px 20px rgba(79,110,247,.4);
+}
+.ob-submit-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.ob-submit-btn:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(79,110,247,.5);
+}
+.ob-privacy {
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: center;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+/* Step 2 — welcome splash */
+#ob-step-welcome {
+  text-align: center;
+  padding: 8px 0;
+}
+.ob-welcome-emoji {
+  font-size: 64px;
+  margin-bottom: 16px;
+  display: block;
+  animation: ob-spin-in .5s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes ob-spin-in {
+  from { transform: scale(0) rotate(-30deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0); opacity: 1; }
+}
+.ob-welcome-name {
+  font-size: 32px;
+  font-weight: 900;
+  background: linear-gradient(135deg,#4f6ef7,#8b5cf6,#ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+.ob-welcome-class {
+  font-size: 14px;
+  font-weight: 800;
+  color: #8b5cf6;
+  background: #f5f3ff;
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+.ob-welcome-msg {
+  font-size: 15px;
+  font-weight: 700;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  padding: 0 8px;
+}
+.ob-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ob-sparkle {
+  position: absolute;
+  border-radius: 50%;
+  animation: ob-sparkle-fly 1s ease-out forwards;
+}
+@keyframes ob-sparkle-fly {
+  0%   { transform: translate(-50%,-50%) scale(0); opacity: 1; }
+  60%  { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0); opacity: 0; }
+}
+.ob-start-btn {
+  padding: 16px 28px;
+  background: linear-gradient(135deg,#f59e0b,#ef4444,#8b5cf6);
+  background-size: 200% 100%;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-family: var(--font, 'Nunito', sans-serif);
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all .25s;
+  box-shadow: 0 6px 24px rgba(245,158,11,.45);
+  animation: ob-pulse 1.8s ease infinite;
+  width: 100%;
+}
+@keyframes ob-pulse {
+  0%,100% { box-shadow: 0 6px 24px rgba(245,158,11,.45); }
+  50%      { box-shadow: 0 10px 36px rgba(245,158,11,.7); }
+}
+.ob-start-btn:hover {
+  transform: scale(1.03) translateY(-2px);
+}
+
+@media (max-width: 480px) {
+  .ob-card { padding: 28px 20px 22px; border-radius: 20px; }
+  .ob-title { font-size: 20px; }
+  .ob-welcome-name { font-size: 26px; }
+  .ob-class-grid { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+}
