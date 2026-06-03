@@ -30,7 +30,7 @@ function openSubject(name) {
   document.getElementById('page-tagline').textContent = titles[name] || 'LearnBuddy';
   if (name === 'math')     { mathTab('calc'); }
   if (name === 'stories')  { if(typeof initStories==='function') initStories(); }
-  if (name === 'typing')   { if(typeof initTyping==='function') initTyping(); _updateTypingSidebarBadges(); }
+  if (name === 'typing')   { if(typeof initTyping==='function') initTyping(); }
   if (name === 'science')  { sciTab('periodic'); buildPeriodicTable(); }
   if (name === 'language') { langTab('trans'); }
   if (name === 'notebook') { renderNotebookStandalone(); }
