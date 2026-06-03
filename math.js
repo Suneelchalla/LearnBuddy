@@ -1443,6 +1443,8 @@ function toggleWOTD() {
   wotdOpen = !wotdOpen;
   panel.style.display = wotdOpen ? '' : 'none';
   if (pill) pill.classList.toggle('open', wotdOpen);
+  // When opening, always show meaning (hide quiz state)
+  if (wotdOpen) _wotdShowMeaning();
 }
 
 async function initWOTD() {
@@ -1599,9 +1601,10 @@ function renderWOTD(data) {
 
   if (emojiEl) emojiEl.textContent = data.emoji || '📚';
 
-  // Hide quiz on new word
+  // Hide quiz on new word, restore meaning visibility
   const qw = document.getElementById('wotd-quiz-wrap');
   if (qw) qw.style.display = 'none';
+  _wotdShowMeaning();
   wotdQuizData = null;
 }
 
@@ -1664,35 +1667,107 @@ function exploreWOTD() {
   }, 150);
 }
 
+// ── Helper: show meaning, hide quiz ──
+function _wotdShowMeaning() {
+  const fullEl = document.getElementById('wotd-fullmean');
+  const exEl   = document.getElementById('wotd-example');
+  const phonEl = document.getElementById('wotd-phonetic');
+  const factW  = document.getElementById('wotd-fact-wrap');
+  const emojiEl= document.getElementById('wotd-emoji');
+  if (fullEl)  fullEl.style.display = '';
+  if (exEl)    exEl.style.display   = '';
+  if (phonEl)  phonEl.style.display = '';
+  if (emojiEl) emojiEl.style.display= '';
+  // fact-wrap visibility is controlled separately (only shown when non-generic)
+}
+
+// ── Helper: hide meaning, show quiz ──
+function _wotdHideMeaning() {
+  const fullEl = document.getElementById('wotd-fullmean');
+  const exEl   = document.getElementById('wotd-example');
+  if (fullEl) fullEl.style.display = 'none';
+  if (exEl)   exEl.style.display   = 'none';
+}
+
+// ── Sparkle animation on correct answer ──
+function _wotdSparkle() {
+  const wrap = document.getElementById('wotd-quiz-wrap');
+  if (!wrap) return;
+  const rect = wrap.getBoundingClientRect();
+  const colors = ['#f59e0b','#6366f1','#10b981','#f43f5e','#3b82f6','#8b5cf6','#fbbf24'];
+  for (let i = 0; i < 32; i++) {
+    const sp = document.createElement('div');
+    const size = 6 + Math.random() * 8;
+    const x = rect.left + Math.random() * rect.width;
+    const y = rect.top  + Math.random() * rect.height * 0.5;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const angle = Math.random() * 360;
+    const dist  = 60 + Math.random() * 120;
+    sp.style.cssText = [
+      'position:fixed', 'z-index:9999',
+      `left:${x}px`, `top:${y}px`,
+      `width:${size}px`, `height:${size}px`,
+      `background:${color}`,
+      'border-radius:50%',
+      'pointer-events:none',
+      'transition:transform 0.7s ease-out, opacity 0.7s ease-out',
+      'transform:translate(-50%,-50%) scale(1)',
+      'opacity:1'
+    ].join(';');
+    document.body.appendChild(sp);
+    requestAnimationFrame(() => {
+      const dx = Math.cos(angle * Math.PI/180) * dist;
+      const dy = Math.sin(angle * Math.PI/180) * dist - 40;
+      sp.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0)`;
+      sp.style.opacity = '0';
+    });
+    setTimeout(() => sp.remove(), 800);
+  }
+}
+
 // ── Quick Quiz ──
 async function quizWOTD() {
   if (!wotdData) return;
-  const qw   = document.getElementById('wotd-quiz-wrap');
-  const qBtn = document.querySelector('.wotd-quiz');
+  const qw = document.getElementById('wotd-quiz-wrap');
 
-  // Toggle off if already open
-  if (qw && qw.style.display !== 'none') { qw.style.display = 'none'; return; }
+  // If quiz already visible and answered, just build a fresh one
+  // If quiz visible and not yet answered, close it and restore meaning
+  if (qw && qw.style.display !== 'none') {
+    const opts = document.getElementById('wotd-quiz-opts');
+    const alreadyAnswered = opts && opts.querySelector('.wotd-opt[disabled]');
+    if (!alreadyAnswered) {
+      qw.style.display = 'none';
+      _wotdShowMeaning();
+      return;
+    }
+    // Re-open fresh quiz (fall through)
+  }
+
+  // Open panel if not already open
+  if (!wotdOpen) toggleWOTD();
+
+  // Hide the meaning so the child has to think
+  _wotdHideMeaning();
+
   if (qw) qw.style.display = '';
 
   const qEl  = document.getElementById('wotd-quiz-q');
   const opts = document.getElementById('wotd-quiz-opts');
   const fb   = document.getElementById('wotd-quiz-fb');
-  if (qEl)  qEl.textContent  = '⏳ Building your quiz…';
-  if (opts) opts.innerHTML   = '';
-  if (fb)   fb.textContent   = '';
+  if (qEl)  qEl.innerHTML = '<span style="font-size:13px;color:var(--text-m)">⏳ Building your quiz…</span>';
+  if (opts) opts.innerHTML = '';
+  if (fb)   fb.innerHTML  = '';
 
   const apiKey = typeof getKey === 'function' ? getKey() : '';
   if (!apiKey || apiKey.length < 10) {
-    // Fallback: simple "which meaning is right" quiz using the definition
     buildFallbackQuiz();
     return;
   }
 
   try {
     const prompt = `Create a fun multiple-choice quiz for a child aged 8-12 about the word "${wotdData.word}".
-The correct answer must test understanding of the word's meaning.
-Return ONLY valid JSON (no markdown):
-{"question":"…","options":["A","B","C","D"],"correct":0,"explanation":"Brief encouraging explanation"}`;
+The correct answer must test understanding of the word meaning.
+Return ONLY valid JSON no markdown: {"question":"engaging question","options":["option A","option B","option C","option D"],"correct":0,"explanation":"Brief encouraging explanation"}`;
     const resp = await fetch(
       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey,
       { method:'POST', headers:{'Content-Type':'application/json'},
@@ -1711,11 +1786,10 @@ Return ONLY valid JSON (no markdown):
 
 function buildFallbackQuiz() {
   if (!wotdData) return;
-  // Pick 3 distractors from the word list
   const distractors = WOTD_WORDS.filter(w => w !== wotdData.word)
     .sort(() => Math.random() - .5).slice(0, 3);
   const correct = Math.floor(Math.random() * 4);
-  const options = [...distractors];
+  const options  = [...distractors];
   options.splice(correct, 0, wotdData.word);
   wotdQuizData = {
     question: '🤔 Which word means: "' + wotdData.meaning.slice(0, 80) + (wotdData.meaning.length > 80 ? '…"' : '"'),
@@ -1731,31 +1805,71 @@ function renderWOTDQuiz(quiz) {
   const opts = document.getElementById('wotd-quiz-opts');
   const fb   = document.getElementById('wotd-quiz-fb');
   if (!qEl || !opts) return;
-  if (qEl)  qEl.textContent = quiz.question || '';
-  if (fb)   fb.textContent  = '';
-  opts.innerHTML = (quiz.options || []).map((opt, i) =>
-    `<button class="wotd-opt" onclick="answerWOTD(this,${i},${quiz.correct},'${(quiz.explanation||'').replace(/'/g,"\\'")}')">
-      <strong style="margin-right:8px;color:#6366f1">${String.fromCharCode(65+i)}.</strong>${opt}
-    </button>`
-  ).join('');
+  qEl.textContent = quiz.question || '';
+  if (fb) fb.innerHTML = '';
+
+  // Build option buttons — use data attributes to avoid quote escaping issues
+  opts.innerHTML = '';
+  (quiz.options || []).forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'wotd-opt';
+    btn.innerHTML = `<strong style="margin-right:8px;color:#6366f1">${String.fromCharCode(65+i)}.</strong>${opt}`;
+    btn.dataset.idx = i;
+    btn.dataset.correct = quiz.correct;
+    btn.dataset.explanation = quiz.explanation || '';
+    btn.addEventListener('click', function() { answerWOTD(this); });
+    opts.appendChild(btn);
+  });
 }
 
-function answerWOTD(btn, chosen, correct, explanation) {
-  const opts = document.getElementById('wotd-quiz-opts');
+function answerWOTD(btn) {
+  const chosen      = parseInt(btn.dataset.idx, 10);
+  const correct     = parseInt(btn.dataset.correct, 10);
+  const explanation = btn.dataset.explanation || '';
+  const opts        = document.getElementById('wotd-quiz-opts');
   if (!opts) return;
+
+  // Disable all options and colour them
   opts.querySelectorAll('.wotd-opt').forEach((b, i) => {
     b.disabled = true;
-    if (i === correct) b.classList.add('correct');
-    else if (i === chosen) b.classList.add('wrong');
+    if (i === correct)       b.classList.add('correct');
+    else if (i === chosen)   b.classList.add('wrong');
   });
-  const fb = document.getElementById('wotd-quiz-fb');
-  if (fb) {
-    const win = chosen === correct;
-    fb.innerHTML = (win ? '🎉 <strong>Correct!</strong> ' : '❌ <strong>Not quite!</strong> ') + explanation;
-    fb.style.color = win ? '#15803d' : '#be123c';
-    // Retry button
-    fb.innerHTML += '<br><button onclick="quizWOTD()" style="margin-top:8px;padding:6px 14px;background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:8px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;color:#4f6ef7;">🔄 Try another question</button>';
+
+  const fb  = document.getElementById('wotd-quiz-fb');
+  const win = chosen === correct;
+
+  if (win) {
+    _wotdSparkle();
+    if (fb) {
+      fb.innerHTML = `<div style="font-size:22px;margin-bottom:4px">🎉</div>
+        <strong style="color:#15803d">Brilliant! You got it!</strong>
+        <div style="font-size:13px;color:#166534;margin-top:4px">${explanation}</div>
+        <button onclick="refreshWOTD()" style="margin-top:10px;padding:7px 16px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:8px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;">✨ Next Word →</button>`;
+    }
+  } else {
+    if (fb) {
+      fb.innerHTML = `<div style="font-size:18px;margin-bottom:4px">😅</div>
+        <strong style="color:#be123c">Not quite — keep trying!</strong>
+        <div style="font-size:13px;color:#9f1239;margin-top:4px">${explanation}</div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+          <button onclick="_retryWOTDQuiz()" style="padding:7px 14px;background:#fff1f2;border:1.5px solid #fecdd3;border-radius:8px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;color:#be123c;">🔄 Try Again</button>
+          <button onclick="refreshWOTD()" style="padding:7px 14px;background:#eef2ff;border:1.5px solid #c7d2fe;border-radius:8px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;color:#4f6ef7;">➡️ New Word</button>
+        </div>`;
+    }
   }
+}
+
+// Re-enable all options for a retry on the same question
+function _retryWOTDQuiz() {
+  const opts = document.getElementById('wotd-quiz-opts');
+  const fb   = document.getElementById('wotd-quiz-fb');
+  if (!opts) return;
+  opts.querySelectorAll('.wotd-opt').forEach(b => {
+    b.disabled = false;
+    b.classList.remove('correct','wrong');
+  });
+  if (fb) fb.innerHTML = '';
 }
 
 // ── Refresh: pick a random new word (not today's default) ──
@@ -1765,7 +1879,9 @@ function refreshWOTD() {
   do { newWord = WOTD_WORDS[Math.floor(Math.random() * WOTD_WORDS.length)]; }
   while (newWord === current);
   wotdData = null;
-  // Clear cache so new word is fetched fresh
   try { localStorage.removeItem('lb_wotd'); } catch {}
+  // Also reset quiz UI state
+  const qw = document.getElementById('wotd-quiz-wrap');
+  if (qw) qw.style.display = 'none';
   fetchAndRenderWOTD(newWord);
 }
