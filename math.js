@@ -30,6 +30,7 @@ function openSubject(name) {
   document.getElementById('page-tagline').textContent = titles[name] || 'LearnBuddy';
   if (name === 'math')     { mathTab('calc'); }
   if (name === 'stories')  { if(typeof initStories==='function') initStories(); }
+  if (name === 'typing')   { if(typeof initTyping==='function') initTyping(); _updateTypingSidebarBadges(); }
   if (name === 'science')  { sciTab('periodic'); buildPeriodicTable(); }
   if (name === 'language') { langTab('trans'); }
   if (name === 'notebook') { renderNotebookStandalone(); }
@@ -2045,3 +2046,17 @@ function _obSparkles() {
 document.addEventListener('DOMContentLoaded', () => {
   initOnboarding();
 });
+
+// ── Update typing sidebar progress badges ──
+function _updateTypingSidebarBadges() {
+  if (typeof TYPING_CURRICULUM === 'undefined') return;
+  ['beginner','medium','advanced'].forEach(lv => {
+    const el = document.getElementById('tnb-prog-' + lv);
+    if (!el) return;
+    let prog = {};
+    try { prog = JSON.parse(localStorage.getItem('lb_typing_progress') || '{}'); } catch {}
+    const sections = TYPING_CURRICULUM[lv].sections;
+    const done = sections.filter(s => prog[s.id]?.completed).length;
+    el.textContent = done + '/' + sections.length;
+  });
+}
