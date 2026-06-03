@@ -1,901 +1,697 @@
 /* ═══════════════════════════════════════════════
-   LearnBuddy — Keyboard Typing Module
-   typing.js — All logic for the Typing workspace
+   LearnBuddy — Typing Practice Module  (typing.js)
 ═══════════════════════════════════════════════ */
 
-// ── STATE ────────────────────────────────────
-const TYPING_STORAGE_KEY = 'lb_typing_progress';
-let typingProgress = {}; // { lessonId: { completed, bestWpm, bestAcc, attempts } }
-let typingSession  = null; // active practice/test session
+const TYPING_KEY = 'lb_typing_progress';
+let typingProgress = {};
+let typingSession  = null;
+let _currentTypingTab = 'overview';
 
-// ── CURRICULUM DATA ─────────────────────────
-const TYPING_CURRICULUM = {
+// ─────────────────────────────────────────────
+//  CURRICULUM  (TypingClub / Typing.com style)
+// ─────────────────────────────────────────────
+const TC = {
   beginner: {
-    label: '🟢 Beginner',
-    color: '#22c55e',
-    colorLight: '#dcfce7',
-    desc: 'Home row keys, fingers on ASDF JKL;, build muscle memory',
-    sections: [
-      {
-        id: 'b-homerow',
-        title: '🏠 Home Row Keys',
-        type: 'practice',
-        icon: '🖐️',
-        desc: 'Learn where to place your fingers: A S D F — J K L ;',
-        content: 'asdf jkl; asdf jkl; asdfjkl; jkl;asdf fj fj dk dk sl sl a; a; fjdksla; asdf jkl; sad flask glad flash ask glad lad lass fall hall all fall dad sad add',
-      },
-      {
-        id: 'b-homerow2',
-        title: '🔤 Home Row Words',
-        type: 'practice',
-        icon: '📝',
-        desc: 'Type real words using only home row keys',
-        content: 'ask fall add dad had jal lad glad flash flask lass hall all fall ask flask glad lad lass fall hall all fall dad sad add ask fall add dad had lad glad',
-      },
-      {
-        id: 'b-toprow',
-        title: '⬆️ Top Row Keys',
-        type: 'practice',
-        icon: '🔝',
-        desc: 'Add Q W E R T — Y U I O P to your fingers',
-        content: 'qwerty uiop qwerty uiop we you top row quit tower power write quip type power tower quiet write your power quite tower rope tripe write power quit quite',
-      },
-      {
-        id: 'b-bottomrow',
-        title: '⬇️ Bottom Row Keys',
-        type: 'practice',
-        icon: '👇',
-        desc: 'Add Z X C V B — N M to complete the alphabet',
-        content: 'zxcv bnm zxcv bnm zone next cave born mix can van box zinc next cave born mix can van box zinc next cave born mix can van box zone next cave',
-      },
-      {
-        id: 'b-numbers',
-        title: '🔢 Number Row',
-        type: 'practice',
-        icon: '1️⃣',
-        desc: 'Practice the number keys 1 2 3 4 5 6 7 8 9 0',
-        content: '1 2 3 4 5 6 7 8 9 0 12 34 56 78 90 123 456 789 100 200 300 400 500 2024 1234 5678 9012 100 250 375 480 625 710 835 940',
-      },
-      {
-        id: 'b-caps',
-        title: '⬆️ Shift & Capital Letters',
-        type: 'practice',
-        icon: '🔡',
-        desc: 'Use Shift key to type capital letters',
-        content: 'Hello World My Name Is A Good Day The Sun Shines Cat Dog Tree School Book Pen Hello Class India Apple Mango Train Water Fire Earth Sky Wind Rain',
-      },
-      {
-        id: 'b-test1',
-        title: '📋 Test 1 — Home Row',
-        type: 'test',
-        icon: '⏱️',
-        timeLimit: 60,
-        desc: '1 minute timed test on home row keys. Target: 10 WPM',
-        content: 'ask fall add dad had lad glad flash flask lass hall all fall ask flask glad fall add dad had lad glad flash flask lass hall all fall ask flask glad lad lass fall hall',
-      },
-      {
-        id: 'b-test2',
-        title: '📋 Test 2 — Full Alphabet',
-        type: 'test',
-        icon: '⏱️',
-        timeLimit: 90,
-        desc: '90 second test on all letter keys. Target: 15 WPM',
-        content: 'the cat sat on the mat a big black dog ran fast over the green hill the quick brown fox jumps over the lazy dog pack my box with five dozen liquor jugs',
-      },
-      {
-        id: 'b-test3',
-        title: '📋 Test 3 — Numbers & Letters',
-        type: 'test',
-        icon: '⏱️',
-        timeLimit: 90,
-        desc: '90 second mixed test. Target: 15 WPM',
-        content: 'there are 26 letters in the english alphabet class 5 has 30 students my phone number is 9876543210 i was born in 2015 today is a good day to learn typing in 2024',
-      },
+    label:'🟢 Beginner', color:'#22c55e', colorDark:'#15803d', colorLight:'#dcfce7',
+    desc:'Start here — home row keys, finger placement, basic words',
+    lessons:[
+      { id:'b1', icon:'🏠', title:'Lesson 1 — Home Row Keys',      type:'practice', time:null,
+        desc:'Place fingers on ASDF JKL; — the most important keys',
+        text:'asdf jkl; asdf jkl; fj fj dk dk sl sl a; a; asdf jkl; asdfjkl; jkl;asdf fj dk sl a; fjdk slaa jfkd las; asdf jkl; asdf jkl;' },
+      { id:'b2', icon:'📝', title:'Lesson 2 — Home Row Words',      type:'practice', time:null,
+        desc:'Type real English words using only A S D F J K L ;',
+        text:'ask fall add dad had lad glad flask lass hall all fall ask glad dad lad hall glad lad fall flask glad had fall all lad add dad ask hall' },
+      { id:'b3', icon:'⬆️', title:'Lesson 3 — Top Row (QWERTY)',    type:'practice', time:null,
+        desc:'Stretch fingers up to reach Q W E R T Y U I O P',
+        text:'quit write power tower quiet tripe tower rope quite your power write quiet tower tripe you top row power write your type quite power tower' },
+      { id:'b4', icon:'⬇️', title:'Lesson 4 — Bottom Row (ZXCVB)',  type:'practice', time:null,
+        desc:'Reach down for Z X C V B N M keys',
+        text:'zone next cave born mix can van box zinc next cave mix can van box zone cave born mix can van box zinc next cave born mix zone' },
+      { id:'b5', icon:'1️⃣', title:'Lesson 5 — Number Row',          type:'practice', time:null,
+        desc:'Learn the numbers 1 2 3 4 5 6 7 8 9 0 across the top',
+        text:'1 2 3 4 5 6 7 8 9 0 12 34 56 78 90 123 456 789 100 200 300 2024 1234 5678 9012 100 250 375 480 625 710 835 940' },
+      { id:'b6', icon:'⬆️', title:'Lesson 6 — Shift and Capitals',   type:'practice', time:null,
+        desc:'Hold Shift to type CAPITAL letters',
+        text:'Hello World My Name Is India Good Day School Book Pen Apple Mango Train Water Sun Moon Star Rain Tree Bird Dog Cat' },
+      { id:'b7', icon:'🔤', title:'Lesson 7 — Simple Words',         type:'practice', time:null,
+        desc:'Mix of all letter keys — common short words',
+        text:'the cat sat on mat big black dog ran fast over green hill the sun is bright sky blue grass soft birds sing every morning' },
+      { id:'b8', icon:'⏱️', title:'Test 1 — Home Row (60s)',          type:'test',     time:60,
+        desc:'1 minute timed test · target: 10 WPM · home row only',
+        text:'ask fall add dad had lad glad flask lass hall all fall ask flask glad fall add dad had lad glad flash lass hall all fall ask flask glad lad lass fall hall add dad' },
+      { id:'b9', icon:'⏱️', title:'Test 2 — All Letters (90s)',       type:'test',     time:90,
+        desc:'90 second test · target: 15 WPM · full alphabet',
+        text:'the cat sat on the mat a big black dog ran fast over the green hill the quick brown fox jumps over the lazy dog pack my box with five dozen liquor jugs' },
     ]
   },
-
   medium: {
-    label: '🟡 Intermediate',
-    color: '#f59e0b',
-    colorLight: '#fef3c7',
-    desc: 'Full sentences, punctuation, speed drills, common words',
-    sections: [
-      {
-        id: 'm-sentences',
-        title: '📖 Simple Sentences',
-        type: 'practice',
-        icon: '✍️',
-        desc: 'Type complete sentences with correct punctuation',
-        content: 'The sun rises in the east. Birds sing in the morning. Flowers bloom in spring. The river flows to the sea. Children love to play outside. Books open many doors. Hard work always pays off. Learn something new every day.',
-      },
-      {
-        id: 'm-punctuation',
-        title: '✳️ Punctuation Keys',
-        type: 'practice',
-        icon: '❗',
-        desc: 'Master commas, periods, question marks and more',
-        content: 'Hello, how are you? I am fine, thank you! What is your name? My name is Ravi. Where do you live? I live in India. Do you like reading? Yes, I love reading books! Can you come today? No, I am busy.',
-      },
-      {
-        id: 'm-commonwords',
-        title: '📚 100 Most Common Words',
-        type: 'practice',
-        icon: '🔤',
-        desc: 'Practice the most frequently used English words',
-        content: 'the and for are but not you all can had her was one our out day get has him his how man new now old see two way who boy did its let put say she too use',
-      },
-      {
-        id: 'm-speed',
-        title: '⚡ Speed Drill',
-        type: 'practice',
-        icon: '🚀',
-        desc: 'Short bursts of fast typing to build finger speed',
-        content: 'the the the and and and for for for that that that with with with have have have this this this from from from they they they will will will your your your',
-      },
-      {
-        id: 'm-paragraphs',
-        title: '📄 Short Paragraphs',
-        type: 'practice',
-        icon: '📃',
-        desc: 'Type flowing paragraphs to build rhythm',
-        content: 'India is a beautiful country. It has many rivers and mountains. The Himalayas are the tallest mountains in the world. The Ganga is a sacred river. India has many festivals like Diwali and Holi. People of different religions live here in harmony.',
-      },
-      {
-        id: 'm-test1',
-        title: '📋 Test 1 — Sentences',
-        type: 'test',
-        icon: '⏱️',
-        timeLimit: 60,
-        desc: '1 minute test on full sentences. Target: 25 WPM',
-        content: 'The sun is bright today. I went to school in the morning. My teacher taught us about plants. We have lunch at one o clock. After school I play cricket with my friends. Reading books makes us smart.',
-      },
-      {
-        id: 'm-test2',
-        title: '📋 Test 2 — Punctuation',
-        type: 'test',
-        icon: '⏱️',
-        timeLimit: 90,
-        desc: '90 second test with punctuation. Target: 25 WPM',
-        content: 'What is the capital of India? New Delhi is the capital. Who was the first Prime Minister? Jawaharlal Nehru was the first Prime Minister. India got independence in 1947. We celebrate Independence Day on August 15.',
-      },
-      {
-        id: 'm-test3',
-        title: '📋 Test 3 — Speed Round',
-        type: 'test',
-        icon: '⏱️',
-        timeLimit: 120,
-        desc: '2 minute speed test. Target: 30 WPM',
-        content: 'Learning to type fast is a very useful skill. When you type without looking at the keyboard you can focus on what you are writing. Practice every day and your speed will improve. Keep your fingers on the home row keys and always use the correct finger for each key.',
-      },
+    label:'🟡 Intermediate', color:'#f59e0b', colorDark:'#92400e', colorLight:'#fef3c7',
+    desc:'Full sentences, punctuation, common words and speed drills',
+    lessons:[
+      { id:'m1', icon:'📖', title:'Lesson 1 — Simple Sentences',     type:'practice', time:null,
+        desc:'Type complete sentences with capital letters and periods',
+        text:'The sun rises in the east. Birds sing in the morning. Flowers bloom in spring. The river flows to the sea. Children love to play outside. Books open many doors.' },
+      { id:'m2', icon:'❗', title:'Lesson 2 — Punctuation',           type:'practice', time:null,
+        desc:'Master commas, periods, question marks, exclamation marks',
+        text:'Hello, how are you? I am fine, thank you! What is your name? My name is Ravi. Where do you live? I live in India. Do you like reading? Yes, I love books!' },
+      { id:'m3', icon:'📚', title:'Lesson 3 — Common Words',          type:'practice', time:null,
+        desc:'The 50 most frequently used English words',
+        text:'the and for are but not you all can had her was one our out day get has him his how man new now old see two way who boy did its let put say she too' },
+      { id:'m4', icon:'⚡', title:'Lesson 4 — Speed Drill',           type:'practice', time:null,
+        desc:'Repeat common words fast to build muscle memory',
+        text:'the the the and and and for for for that that with with have have this this from from they they will will your your what what said said each each' },
+      { id:'m5', icon:'📄', title:'Lesson 5 — Short Paragraphs',      type:'practice', time:null,
+        desc:'Flowing text to build rhythm and consistency',
+        text:'India is a beautiful country. It has many rivers and mountains. The Himalayas are the tallest mountains in the world. India has many festivals like Diwali and Holi.' },
+      { id:'m6', icon:'🔢', title:'Lesson 6 — Numbers in Context',    type:'practice', time:null,
+        desc:'Mix numbers naturally into sentences',
+        text:'There are 26 letters in the alphabet. Class 5 has 30 students. I was born in 2014. Today is the 15th of August. We have 7 days in a week and 12 months in a year.' },
+      { id:'m7', icon:'⏱️', title:'Test 1 — Sentences (60s)',          type:'test',     time:60,
+        desc:'1 minute test · target: 25 WPM · full sentences',
+        text:'The sun is bright today. I went to school in the morning. My teacher taught us about plants. We have lunch at one. After school I play cricket with my friends.' },
+      { id:'m8', icon:'⏱️', title:'Test 2 — Speed Round (2 min)',      type:'test',     time:120,
+        desc:'2 minute test · target: 30 WPM · paragraphs',
+        text:'Learning to type fast is a very useful skill. When you type without looking at the keyboard you can focus on what you are writing. Practice every day and your speed will improve. Keep your fingers on the home row keys and always use the correct finger for each key.' },
     ]
   },
-
   advanced: {
-    label: '🔴 Advanced',
-    color: '#f43f5e',
-    colorLight: '#ffe4e6',
-    desc: 'Long passages, special characters, high speed challenges',
-    sections: [
-      {
-        id: 'a-longtext',
-        title: '📜 Long Passages',
-        type: 'practice',
-        icon: '📖',
-        desc: 'Type long paragraphs without stopping',
-        content: 'Once upon a time in a small village near a forest, there lived a young girl named Meena. She was very curious and loved to explore the woods near her home. Every morning she would wake up early, pack a small bag with some food and water, and set off on a new adventure. One day she discovered a hidden lake that nobody in the village knew about. The water was crystal clear and she could see tiny fish swimming near the surface.',
-      },
-      {
-        id: 'a-special',
-        title: '🔣 Special Characters',
-        type: 'practice',
-        icon: '⌨️',
-        desc: 'Practice @, #, $, %, &, *, (, ), -, +, =',
-        content: 'email@example.com price: $50 #learning 50% off one+one=two (hello world) name-surname a*b = ab user@gmail.com cost: $100 #coding 75% done hello@world.com a-b=c x*y+z',
-      },
-      {
-        id: 'a-coding',
-        title: '💻 Code Typing',
-        type: 'practice',
-        icon: '🖥️',
-        desc: 'Type code-like patterns with brackets and symbols',
-        content: 'print("Hello World") x = 10 + 5 if x > 0: print(x) def add(a, b): return a + b for i in range(10): print(i) name = "Ravi" age = 12 score = 95',
-      },
-      {
-        id: 'a-accuracy',
-        title: '🎯 Accuracy Drill',
-        type: 'practice',
-        icon: '🏹',
-        desc: 'Tricky letter combinations — focus on zero errors',
-        content: 'rhythm rhythm rhythm strength strength strength through through through beautiful beautiful beautiful necessary necessary necessary accommodation accommodation particularly particularly particularly',
-      },
-      {
-        id: 'a-test1',
-        title: '📋 Test 1 — Long Passage',
-        type: 'test',
-        icon: '⏱️',
-        timeLimit: 120,
-        desc: '2 minute passage test. Target: 40 WPM',
-        content: 'Technology is changing the world very fast. Computers and smartphones have made our lives easier in many ways. We can communicate with people across the world instantly. Students can learn from online resources. Doctors can diagnose diseases with the help of machines. However we must use technology wisely and not become dependent on it for everything.',
-      },
-      {
-        id: 'a-test2',
-        title: '📋 Test 2 — Special Characters',
-        type: 'test',
-        icon: '⏱️',
-        timeLimit: 90,
-        desc: '90 second test with symbols and numbers. Target: 35 WPM',
-        content: 'The price is $25.00 and the discount is 10%. Call us at +91-9876543210 or email info@learnbuddy.com. Use code LEARN50 for 50% off! Total items: 5 + 3 = 8. Reference #2024-LB.',
-      },
-      {
-        id: 'a-test3',
-        title: '📋 Champion Test 🏆',
-        type: 'test',
-        icon: '🏆',
-        timeLimit: 180,
-        desc: '3 minute ultimate test. Target: 45 WPM, 95% accuracy',
-        content: 'The history of India spans thousands of years. The Indus Valley Civilisation was one of the earliest in the world, dating back to 3000 BCE. India gave the world mathematics, chess, yoga, and zero. Great emperors like Ashoka spread Buddhism across Asia. The Mughal Empire built magnificent monuments including the Taj Mahal. In modern times, India became independent on August 15, 1947 after a long freedom struggle led by Mahatma Gandhi and many other brave heroes.',
-      },
+    label:'🔴 Advanced', color:'#f43f5e', colorDark:'#be123c', colorLight:'#ffe4e6',
+    desc:'Long passages, special characters and high speed challenges',
+    lessons:[
+      { id:'a1', icon:'📜', title:'Lesson 1 — Long Passage',          type:'practice', time:null,
+        desc:'Type a flowing story passage without stopping',
+        text:'Once upon a time in a small village near a forest there lived a young girl named Meena. She was very curious and loved to explore the woods near her home. Every morning she would wake up early and set off on a new adventure discovering the wonders of nature.' },
+      { id:'a2', icon:'🔣', title:'Lesson 2 — Special Characters',    type:'practice', time:null,
+        desc:'Practice @, #, $, %, &, *, (, ), -, +, =, /',
+        text:'email@example.com price: $50 #learning 50% off one+one=two (hello world) name-surname a*b=ab user@gmail.com cost: $100 #coding 75% done a-b=c x*y+z total: $250' },
+      { id:'a3', icon:'💻', title:'Lesson 3 — Code Patterns',         type:'practice', time:null,
+        desc:'Type programming-style text with brackets and symbols',
+        text:'print("Hello World") x = 10 + 5 if x > 0: print(x) name = "Ravi" age = 12 score = 95 for i in range(10): print(i) def add(a, b): return a + b' },
+      { id:'a4', icon:'🎯', title:'Lesson 4 — Accuracy Drill',        type:'practice', time:null,
+        desc:'Tricky words — slow down and focus on zero errors',
+        text:'rhythm rhythm strength beautiful necessary accommodation particularly through comfortable environment thoughtful thoroughly separate occasionally immediately extraordinary' },
+      { id:'a5', icon:'🌍', title:'Lesson 5 — India & World',          type:'practice', time:null,
+        desc:'A paragraph about India for knowledge and speed',
+        text:'India is the seventh largest country by area and the most populous nation in the world. It has a rich history spanning thousands of years. The Indus Valley Civilisation was one of the earliest civilisations in the world dating back to 3000 BCE.' },
+      { id:'a6', icon:'⏱️', title:'Test 1 — Long Passage (2 min)',     type:'test',     time:120,
+        desc:'2 minute test · target: 40 WPM',
+        text:'Technology is changing the world very fast. Computers and smartphones have made our lives easier in many ways. We can communicate with people across the world instantly. Students can learn from online resources. Doctors can diagnose diseases with the help of machines.' },
+      { id:'a7', icon:'🏆', title:'Champion Test (3 min)',              type:'test',     time:180,
+        desc:'3 minute ultimate test · target: 45 WPM · 95% accuracy',
+        text:'The history of India spans thousands of years. The Indus Valley Civilisation was one of the earliest in the world dating back to 3000 BCE. India gave the world mathematics chess yoga and zero. Great emperors like Ashoka spread Buddhism across Asia. The Mughal Empire built magnificent monuments including the Taj Mahal. India became independent on August 15 1947 after a long freedom struggle led by Mahatma Gandhi and many other brave heroes who sacrificed everything for their nation.' },
     ]
   }
 };
 
+const FINGER_COLORS = {
+  a:'#f43f5e', q:'#f43f5e', z:'#f43f5e', '1':'#f43f5e',
+  s:'#f97316', w:'#f97316', x:'#f97316', '2':'#f97316',
+  d:'#f59e0b', e:'#f59e0b', c:'#f59e0b', '3':'#f59e0b',
+  f:'#22c55e', r:'#22c55e', v:'#22c55e', '4':'#22c55e',
+  t:'#22c55e', g:'#22c55e', b:'#22c55e', '5':'#22c55e',
+  j:'#3b82f6', u:'#3b82f6', m:'#3b82f6', '7':'#3b82f6',
+  y:'#3b82f6', h:'#3b82f6', n:'#3b82f6', '6':'#3b82f6',
+  k:'#8b5cf6', i:'#8b5cf6', ',':'#8b5cf6', '8':'#8b5cf6',
+  l:'#ec4899', o:'#ec4899', '.':'#ec4899', '9':'#ec4899',
+  ';':'#06b6d4', p:'#06b6d4', '/':'#06b6d4', '0':'#06b6d4',
+};
+
 // ─────────────────────────────────────────────
-//  INIT & NAVIGATION
+//  INIT & ROUTING
 // ─────────────────────────────────────────────
 function initTyping() {
-  loadTypingProgress();
+  _tpLoad();
   typingTab('overview');
 }
 
 function typingTab(tab) {
-  // Hide all panels
-  document.querySelectorAll('.typing-panel').forEach(p => p.style.display = 'none');
-  document.querySelectorAll('.typing-nav-btn').forEach(b => b.classList.remove('active'));
+  _currentTypingTab = tab;
 
-  const panel = document.getElementById('typing-' + tab);
-  const btn   = document.getElementById('tnav-' + tab);
-  if (panel) panel.style.display = '';
-  if (btn)   btn.classList.add('active');
+  // Show/hide panels using inline style (NOT relying on CSS .typing-panel rule)
+  ['overview','beginner','medium','advanced','progress','session'].forEach(t => {
+    const el = document.getElementById('typing-' + t);
+    if (el) el.style.display = (t === tab) ? 'block' : 'none';
+  });
 
-  if (tab === 'overview')   renderTypingOverview();
-  if (tab === 'beginner')   renderTypingLevel('beginner');
-  if (tab === 'medium')     renderTypingLevel('medium');
-  if (tab === 'advanced')   renderTypingLevel('advanced');
-  if (tab === 'progress')   renderTypingProgressPage();
+  document.querySelectorAll('.typing-nav-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.tab === tab));
 
-  // If there's an active session, stop it when navigating away
-  if (typingSession && tab !== 'session') endTypingSession(false);
+  if (typingSession && tab !== 'session') _killSession();
+
+  if (tab === 'overview')  _renderOverview();
+  if (tab === 'beginner')  _renderLevel('beginner');
+  if (tab === 'medium')    _renderLevel('medium');
+  if (tab === 'advanced')  _renderLevel('advanced');
+  if (tab === 'progress')  _renderProgress();
+  _updateSidebarBadges();
 }
 
 // ─────────────────────────────────────────────
-//  OVERVIEW PAGE
+//  OVERVIEW
 // ─────────────────────────────────────────────
-function renderTypingOverview() {
+function _renderOverview() {
   const el = document.getElementById('typing-overview');
   if (!el) return;
 
-  const levels = ['beginner','medium','advanced'];
-  const stats = levels.map(lv => {
-    const sections = TYPING_CURRICULUM[lv].sections;
-    const done = sections.filter(s => typingProgress[s.id]?.completed).length;
-    return { lv, done, total: sections.length, pct: Math.round(done/sections.length*100) };
+  const lvs = ['beginner','medium','advanced'];
+  const stats = lvs.map(lv => {
+    const ls = TC[lv].lessons;
+    const done = ls.filter(l => typingProgress[l.id]?.completed).length;
+    return { lv, done, total:ls.length, pct:Math.round(done/ls.length*100) };
   });
 
-  const totalDone  = stats.reduce((a,s) => a + s.done, 0);
-  const totalAll   = stats.reduce((a,s) => a + s.total, 0);
-  const allWpms    = Object.values(typingProgress).map(p => p.bestWpm).filter(Boolean);
-  const bestWpm    = allWpms.length ? Math.max(...allWpms) : 0;
-  const totalAttempts = Object.values(typingProgress).reduce((a,p) => a + (p.attempts||0), 0);
+  const totalDone = stats.reduce((a,s) => a+s.done, 0);
+  const totalAll  = stats.reduce((a,s) => a+s.total, 0);
+  const allWpms   = Object.values(typingProgress).map(p=>p.bestWpm).filter(Boolean);
+  const bestWpm   = allWpms.length ? Math.max(...allWpms) : 0;
+  const totalTries= Object.values(typingProgress).reduce((a,p)=>a+(p.attempts||0),0);
 
-  // Find next recommended lesson
   let nextLesson = null;
-  for (const lv of levels) {
-    for (const s of TYPING_CURRICULUM[lv].sections) {
-      if (!typingProgress[s.id]?.completed) { nextLesson = { lv, ...s }; break; }
+  for (const lv of lvs) {
+    for (const l of TC[lv].lessons) {
+      if (!typingProgress[l.id]?.completed) { nextLesson={lv,...l}; break; }
     }
     if (nextLesson) break;
   }
 
   el.innerHTML = `
-    <div class="typing-overview-wrap">
-      <!-- Hero banner -->
-      <div class="typing-hero">
-        <div class="typing-hero-emoji">⌨️</div>
-        <div class="typing-hero-text">
-          <h2 class="typing-hero-title">Keyboard Typing</h2>
-          <p class="typing-hero-sub">Master touch typing — from home row to champion speed!</p>
+  <div class="typing-overview-wrap">
+    <div class="typing-hero">
+      <div class="typing-hero-emoji">⌨️</div>
+      <div>
+        <div class="typing-hero-title">Keyboard Typing Practice</div>
+        <div class="typing-hero-sub">Master touch typing — from home row to champion speed, step by step!</div>
+      </div>
+    </div>
+
+    <div class="typing-stats-row">
+      <div class="typing-stat-card"><div class="tsc-num">${totalDone}/${totalAll}</div><div class="tsc-label">Lessons Done</div></div>
+      <div class="typing-stat-card"><div class="tsc-num">${bestWpm||'—'}</div><div class="tsc-label">Best WPM</div></div>
+      <div class="typing-stat-card"><div class="tsc-num">${totalTries}</div><div class="tsc-label">Total Practice</div></div>
+      <div class="typing-stat-card"><div class="tsc-num">${Math.round(totalDone/totalAll*100)||0}%</div><div class="tsc-label">Complete</div></div>
+    </div>
+
+    <div class="typing-level-cards">
+      ${stats.map(s => {
+        const lv = TC[s.lv];
+        const next = lv.lessons.find(l => !typingProgress[l.id]?.completed);
+        return `
+        <div class="typing-level-card" onclick="typingTab('${s.lv}')">
+          <div class="tlc-header" style="background:${lv.color}">
+            <div class="tlc-label">${lv.label}</div>
+            <div class="tlc-pct">${s.pct}%</div>
+          </div>
+          <div class="tlc-body">
+            <p class="tlc-desc">${lv.desc}</p>
+            <div class="tlc-bar"><div class="tlc-fill" style="width:${s.pct}%;background:${lv.color}"></div></div>
+            <div class="tlc-count">${s.done} of ${s.total} lessons completed</div>
+            ${next ? `<div class="tlc-next">▶ Next: ${next.title}</div>` : `<div class="tlc-done">✅ All done!</div>`}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    ${nextLesson ? `
+    <div class="typing-next-up">
+      <div class="tnu-label">📍 Continue where you left off</div>
+      <div class="tnu-title">${nextLesson.title}</div>
+      <div class="tnu-desc">${nextLesson.desc}</div>
+      <button class="tnu-btn" onclick="startLesson('${nextLesson.lv}','${nextLesson.id}')">
+        ${nextLesson.type==='test' ? '⏱️ Take Test' : '▶ Start Practice'}
+      </button>
+    </div>` : `
+    <div class="typing-next-up" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#86efac;">
+      <div class="tnu-label">🏆 Achievement!</div>
+      <div class="tnu-title">All lessons completed! You're a typing champion! 🎉</div>
+    </div>`}
+
+    <div class="typing-keyboard-poster">
+      <div class="tkp-title">💡 Finger Placement Guide — Home Row</div>
+      <div class="tkp-wrap">
+        <div class="tkp-row">
+          ${['A','S','D','F','G','H','J','K','L',';'].map(k => {
+            const c = FINGER_COLORS[k.toLowerCase()] || '#334155';
+            return `<div class="tkp-key" style="background:${c}" title="${k}">${k}</div>`;
+          }).join('')}
+        </div>
+        <div class="tkp-hint">👆 Rest your fingers here every time you start typing!</div>
+        <div class="tkp-fingers">
+          <span>🤚 Left: <strong style="color:#f43f5e">A</strong> <strong style="color:#f97316">S</strong> <strong style="color:#f59e0b">D</strong> <strong style="color:#22c55e">F</strong></span>
+          <span>✋ Right: <strong style="color:#3b82f6">J</strong> <strong style="color:#8b5cf6">K</strong> <strong style="color:#ec4899">L</strong> <strong style="color:#06b6d4">;</strong></span>
+          <span>Thumbs: <strong>Space Bar</strong></span>
         </div>
       </div>
-
-      <!-- Stats row -->
-      <div class="typing-stats-row">
-        <div class="typing-stat-card">
-          <div class="tsc-num">${totalDone}/${totalAll}</div>
-          <div class="tsc-label">Lessons Done</div>
-        </div>
-        <div class="typing-stat-card">
-          <div class="tsc-num">${bestWpm || '—'}</div>
-          <div class="tsc-label">Best WPM</div>
-        </div>
-        <div class="typing-stat-card">
-          <div class="tsc-num">${totalAttempts}</div>
-          <div class="tsc-label">Total Practice</div>
-        </div>
-        <div class="typing-stat-card">
-          <div class="tsc-num">${Math.round(totalDone/totalAll*100)||0}%</div>
-          <div class="tsc-label">Complete</div>
-        </div>
-      </div>
-
-      <!-- Level cards -->
-      <div class="typing-level-cards">
-        ${stats.map(s => {
-          const lv   = TYPING_CURRICULUM[s.lv];
-          const next = lv.sections.find(sec => !typingProgress[sec.id]?.completed);
-          return `
-          <div class="typing-level-card" onclick="typingTab('${s.lv}')">
-            <div class="tlc-header" style="background:${lv.color}">
-              <div class="tlc-label">${lv.label}</div>
-              <div class="tlc-pct">${s.pct}%</div>
-            </div>
-            <div class="tlc-body">
-              <p class="tlc-desc">${lv.desc}</p>
-              <div class="tlc-progress-bar"><div class="tlc-progress-fill" style="width:${s.pct}%;background:${lv.color}"></div></div>
-              <div class="tlc-count">${s.done} of ${s.total} lessons completed</div>
-              ${next ? `<div class="tlc-next">▶ Next: ${next.title}</div>` : `<div class="tlc-done">✅ All done!</div>`}
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-
-      <!-- Next up recommendation -->
-      ${nextLesson ? `
-      <div class="typing-next-up">
-        <div class="tnu-label">📍 Pick up where you left off</div>
-        <div class="tnu-title">${nextLesson.title}</div>
-        <div class="tnu-desc">${nextLesson.desc}</div>
-        <button class="tnu-btn" onclick="startTypingLesson('${nextLesson.lv}','${nextLesson.id}')">
-          ${nextLesson.type === 'test' ? '⏱️ Start Test' : '▶ Start Practice'}
-        </button>
-      </div>` : `
-      <div class="typing-next-up" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#86efac;">
-        <div class="tnu-label">🏆 Congratulations!</div>
-        <div class="tnu-title">You've completed all lessons!</div>
-        <div class="tnu-desc">Amazing work — you're a typing champion!</div>
-      </div>`}
-
-      <!-- Keyboard poster -->
-      <div class="typing-keyboard-poster">
-        <div class="tkp-title">💡 Finger Placement Guide</div>
-        ${renderKeyboardDiagram()}
-      </div>
-    </div>`;
+    </div>
+  </div>`;
 }
 
 // ─────────────────────────────────────────────
-//  LEVEL PAGE  (beginner / medium / advanced)
+//  LEVEL PAGE
 // ─────────────────────────────────────────────
-function renderTypingLevel(lv) {
+function _renderLevel(lv) {
   const el = document.getElementById('typing-' + lv);
   if (!el) return;
-  const curriculum = TYPING_CURRICULUM[lv];
-  const sections   = curriculum.sections;
+  const c = TC[lv];
+  const done = c.lessons.filter(l => typingProgress[l.id]?.completed).length;
 
   el.innerHTML = `
-    <div class="typing-level-wrap">
-      <div class="tlw-header" style="border-left:5px solid ${curriculum.color}">
-        <div>
-          <div class="tlw-title">${curriculum.label}</div>
-          <div class="tlw-desc">${curriculum.desc}</div>
-        </div>
-        <div class="tlw-progress-info">
-          ${sections.filter(s => typingProgress[s.id]?.completed).length}/${sections.length} done
-        </div>
+  <div class="typing-level-wrap">
+    <div class="tlw-header" style="border-left:5px solid ${c.color}">
+      <div>
+        <div class="tlw-title">${c.label}</div>
+        <div class="tlw-desc">${c.desc}</div>
       </div>
+      <div class="tlw-info">${done}/${c.lessons.length} done</div>
+    </div>
 
-      <div class="typing-section-list">
-        ${sections.map((section, idx) => {
-          const prog = typingProgress[section.id] || {};
-          const done = !!prog.completed;
-          const isTest = section.type === 'test';
-          return `
-          <div class="typing-section-item ${done ? 'done' : ''}" id="tsi-${section.id}">
-            <div class="tsi-left">
-              <div class="tsi-checkbox ${done ? 'checked' : ''}" onclick="toggleTypingComplete('${section.id}', '${lv}')" title="${done ? 'Mark incomplete' : 'Mark complete'}">
-                ${done ? '✓' : ''}
-              </div>
+    <div class="typing-section-list">
+      ${c.lessons.map((l, idx) => {
+        const p    = typingProgress[l.id] || {};
+        const isDone = !!p.completed;
+        const isTest = l.type === 'test';
+        return `
+        <div class="typing-section-item ${isDone ? 'tsi-done' : ''}" id="tsi-${l.id}">
+          <div class="tsi-num">${isDone ? '✓' : idx+1}</div>
+          <div class="tsi-body">
+            <div class="tsi-top">
+              <span class="tsi-icon">${l.icon}</span>
+              <span class="tsi-title">${l.title}</span>
+              <span class="tsi-badge ${isTest ? 'tsi-badge-test' : 'tsi-badge-practice'}">${isTest ? '⏱ '+l.time+'s' : 'Practice'}</span>
+              ${isDone ? '<span class="tsi-badge tsi-badge-done">✅ Done</span>' : ''}
             </div>
-            <div class="tsi-body">
-              <div class="tsi-top">
-                <span class="tsi-icon">${section.icon}</span>
-                <span class="tsi-title">${section.title}</span>
-                ${isTest ? `<span class="tsi-badge test">⏱ ${section.timeLimit}s</span>` : `<span class="tsi-badge practice">Practice</span>`}
-                ${done ? `<span class="tsi-badge done-badge">✅ Done</span>` : ''}
-              </div>
-              <div class="tsi-desc">${section.desc}</div>
-              ${prog.bestWpm ? `<div class="tsi-stats">Best: <strong>${prog.bestWpm} WPM</strong> · <strong>${prog.bestAcc}%</strong> accuracy · ${prog.attempts} attempt${prog.attempts>1?'s':''}</div>` : ''}
-            </div>
-            <div class="tsi-right">
-              <button class="tsi-btn ${isTest ? 'test' : 'practice'}" onclick="startTypingLesson('${lv}','${section.id}')">
-                ${done ? '🔄 Redo' : (isTest ? '⏱️ Take Test' : '▶ Practice')}
-              </button>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
+            <div class="tsi-desc">${l.desc}</div>
+            ${p.bestWpm ? `<div class="tsi-best">🏅 Best: ${p.bestWpm} WPM · ${p.bestAcc}% accuracy · ${p.attempts} attempt${p.attempts>1?'s':''}</div>` : ''}
+          </div>
+          <div class="tsi-right" style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+            <button class="tsi-btn ${isTest ? 'tsi-btn-test' : 'tsi-btn-practice'}" onclick="startLesson('${lv}','${l.id}')">
+              ${isDone ? '🔄 Redo' : (isTest ? '⏱️ Take Test' : '▶ Start')}
+            </button>
+            <label style="display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--text-m);cursor:pointer;white-space:nowrap;">
+              <input type="checkbox" ${isDone?'checked':''} onchange="toggleDone('${l.id}','${lv}',this.checked)" style="width:14px;height:14px;cursor:pointer;">
+              Mark done
+            </label>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
 }
 
-// ─────────────────────────────────────────────
-//  TOGGLE COMPLETE (checkbox)
-// ─────────────────────────────────────────────
-function toggleTypingComplete(id, lv) {
-  loadTypingProgress();
+function toggleDone(id, lv, checked) {
+  _tpLoad();
   if (!typingProgress[id]) typingProgress[id] = {};
-  typingProgress[id].completed = !typingProgress[id].completed;
-  saveTypingProgress();
-  renderTypingLevel(lv);
+  typingProgress[id].completed = checked;
+  _tpSave();
+  _renderLevel(lv);
+  _updateSidebarBadges();
 }
 
 // ─────────────────────────────────────────────
-//  SESSION — Practice & Test
+//  SESSION — the actual typing practice
 // ─────────────────────────────────────────────
-function startTypingLesson(lv, id) {
-  const section = TYPING_CURRICULUM[lv].sections.find(s => s.id === id);
-  if (!section) return;
+function startLesson(lv, id) {
+  const lesson = TC[lv].lessons.find(l => l.id === id);
+  if (!lesson) return;
 
   // Show session panel
-  document.querySelectorAll('.typing-panel').forEach(p => p.style.display = 'none');
+  ['overview','beginner','medium','advanced','progress'].forEach(t => {
+    const el = document.getElementById('typing-' + t);
+    if (el) el.style.display = 'none';
+  });
   document.querySelectorAll('.typing-nav-btn').forEach(b => b.classList.remove('active'));
   const sp = document.getElementById('typing-session');
-  if (sp) sp.style.display = '';
+  if (sp) sp.style.display = 'block';
 
   typingSession = {
-    lv, id, section,
-    started: false,
-    startTime: null,
+    lv, id, lesson,
+    started: false, startTime: null,
     timerInterval: null,
-    timeLeft: section.timeLimit || null,
-    input: '',
-    target: section.content.trim(),
-    errors: 0,
-    totalTyped: 0,
+    timeLeft: lesson.time,
+    typed: '', errors: 0, totalTyped: 0,
     finished: false,
+    target: lesson.text.trim(),
   };
 
-  renderTypingSession();
+  _renderSession();
 }
 
-function renderTypingSession() {
+function _renderSession() {
   const el = document.getElementById('typing-session');
   if (!el || !typingSession) return;
-  const s = typingSession.section;
-  const isTest = s.type === 'test';
-  const lv = TYPING_CURRICULUM[typingSession.lv];
+  const { lesson, lv } = typingSession;
+  const isTest = lesson.type === 'test';
+  const c = TC[lv];
 
   el.innerHTML = `
-    <div class="typing-session-wrap">
-      <!-- Header -->
-      <div class="tsw-header">
-        <button class="tsw-back" onclick="typingSessionBack()">← Back</button>
-        <div class="tsw-info">
-          <span class="tsw-level" style="color:${lv.color}">${lv.label}</span>
-          <span class="tsw-title">${s.title}</span>
-        </div>
-        ${isTest ? `
-        <div class="tsw-timer ${typingSession.started ? 'running' : ''}" id="tsw-timer">
-          <span class="tsw-timer-icon">⏱️</span>
-          <span id="tsw-time-display">${formatTime(s.timeLimit)}</span>
-        </div>` : `<div></div>`}
+  <div class="tsw-wrap">
+    <div class="tsw-header">
+      <button class="tsw-back" onclick="_backFromSession()">← Back</button>
+      <div class="tsw-info">
+        <span class="tsw-lv" style="color:${c.color}">${c.label}</span>
+        <span class="tsw-title">${lesson.title}</span>
       </div>
+      ${isTest ? `
+      <div class="tsw-timer" id="tsw-timer">
+        <span class="tsw-timer-icon">⏱️</span>
+        <span id="tsw-time-val">${_fmtTime(lesson.time)}</span>
+      </div>` : `<div></div>`}
+    </div>
 
-      <!-- Live stats bar -->
-      <div class="tsw-stats-bar">
-        <div class="tsw-stat"><span class="tsw-stat-n" id="tstat-wpm">0</span><span class="tsw-stat-l">WPM</span></div>
-        <div class="tsw-stat"><span class="tsw-stat-n" id="tstat-acc">100</span><span class="tsw-stat-l">% Acc</span></div>
-        <div class="tsw-stat"><span class="tsw-stat-n" id="tstat-chars">0</span><span class="tsw-stat-l">Chars</span></div>
-        <div class="tsw-stat"><span class="tsw-stat-n" id="tstat-errors">0</span><span class="tsw-stat-l">Errors</span></div>
-      </div>
+    <div class="tsw-stats">
+      <div class="tsw-stat"><span class="tsw-stat-val" id="ts-wpm">0</span><span class="tsw-stat-lbl">WPM</span></div>
+      <div class="tsw-stat"><span class="tsw-stat-val" id="ts-acc">100</span><span class="tsw-stat-lbl">% Acc</span></div>
+      <div class="tsw-stat"><span class="tsw-stat-val" id="ts-chars">0</span><span class="tsw-stat-lbl">Chars</span></div>
+      <div class="tsw-stat"><span class="tsw-stat-val" id="ts-errors">0</span><span class="tsw-stat-lbl">Errors</span></div>
+    </div>
 
-      <!-- Instruction -->
-      <div class="tsw-instruction">
-        ${isTest
-          ? `⏱️ Timed Test — ${s.timeLimit}s · ${s.desc} · Press any key to <strong>start the timer</strong>`
-          : `✍️ Practice Mode — Type the text below. Press any key to begin.`
-        }
-      </div>
+    <div class="tsw-instr">
+      ${isTest
+        ? `⏱️ <strong>Timed Test — ${lesson.time}s.</strong> ${lesson.desc}. Timer starts when you begin typing!`
+        : `✍️ <strong>Practice Mode</strong> — ${lesson.desc}. Start typing in the box below. Try not to look at the keyboard!`
+      }
+    </div>
 
-      <!-- Target text display -->
-      <div class="tsw-text-display" id="tsw-text-display">
-        ${buildTextDisplay(typingSession.target, 0)}
-      </div>
+    <div class="tsw-textbox" id="tsw-textbox">${_buildDisplay(typingSession.target, 0, '')}</div>
 
-      <!-- Input area -->
-      <textarea
-        class="tsw-input"
-        id="tsw-input"
-        placeholder="Start typing here…"
-        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        oninput="onTypingInput(event)"
-        onkeydown="onTypingKeydown(event)"
-      ></textarea>
+    <textarea
+      id="tsw-input"
+      class="tsw-input"
+      placeholder="Click here and start typing…"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      oninput="_onTypingInput(event)"
+      onkeydown="_onTypingKeydown(event)"
+    ></textarea>
 
-      <!-- Virtual keyboard -->
-      <div class="tsw-keyboard" id="tsw-keyboard">
-        ${renderVirtualKeyboard()}
-      </div>
+    <div class="vkb-outer" id="tsw-vkb">${_buildVKB()}</div>
 
-      <!-- Result panel (hidden until done) -->
-      <div id="tsw-result" style="display:none"></div>
-    </div>`;
+    <div id="tsw-result" style="display:none"></div>
+  </div>`;
 
-  // Focus input
   setTimeout(() => {
     const inp = document.getElementById('tsw-input');
     if (inp) inp.focus();
-  }, 100);
+  }, 80);
+  _highlightKey(typingSession.target[0] || '');
 }
 
-// ─────────────────────────────────────────────
-//  TYPING INPUT HANDLER
-// ─────────────────────────────────────────────
-function onTypingInput(e) {
-  const inp = e.target;
-  const val = inp.value;
+function _onTypingInput(e) {
+  const val = e.target.value;
   if (!typingSession || typingSession.finished) return;
 
-  // Start timer on first keystroke
   if (!typingSession.started) {
     typingSession.started = true;
     typingSession.startTime = Date.now();
-    if (typingSession.section.type === 'test') startTypingTimer();
+    if (typingSession.lesson.type === 'test') _startTimer();
     const timerEl = document.getElementById('tsw-timer');
     if (timerEl) timerEl.classList.add('running');
   }
 
-  typingSession.input = val;
+  typingSession.typed = val;
   typingSession.totalTyped = val.length;
 
-  // Count errors
-  let errors = 0;
+  let errs = 0;
   for (let i = 0; i < val.length; i++) {
-    if (val[i] !== typingSession.target[i]) errors++;
+    if (val[i] !== typingSession.target[i]) errs++;
   }
-  typingSession.errors = errors;
+  typingSession.errors = errs;
 
-  // Update display
-  const displayEl = document.getElementById('tsw-text-display');
-  if (displayEl) displayEl.innerHTML = buildTextDisplay(typingSession.target, val.length, val);
+  const tb = document.getElementById('tsw-textbox');
+  if (tb) tb.innerHTML = _buildDisplay(typingSession.target, val.length, val);
 
-  // Highlight active key on virtual keyboard
-  const nextChar = typingSession.target[val.length] || '';
-  highlightKey(nextChar);
+  _highlightKey(typingSession.target[val.length] || '');
+  _updateStats();
 
-  // Update live stats
-  updateTypingStats();
-
-  // Check completion
-  if (val.length >= typingSession.target.length) {
-    finishTypingSession(true);
-  }
+  if (val.length >= typingSession.target.length) _finish(true);
 }
 
-function onTypingKeydown(e) {
-  // Prevent Tab from leaving the textarea
-  if (e.key === 'Tab') { e.preventDefault(); }
+function _onTypingKeydown(e) {
+  if (e.key === 'Tab') e.preventDefault();
 }
 
-function startTypingTimer() {
+function _startTimer() {
   typingSession.timerInterval = setInterval(() => {
     if (!typingSession || typingSession.finished) return;
     const elapsed = Math.floor((Date.now() - typingSession.startTime) / 1000);
-    typingSession.timeLeft = typingSession.section.timeLimit - elapsed;
-    const disp = document.getElementById('tsw-time-display');
-    if (disp) {
-      disp.textContent = formatTime(Math.max(0, typingSession.timeLeft));
-      if (typingSession.timeLeft <= 10) disp.style.color = '#f43f5e';
-      else if (typingSession.timeLeft <= 30) disp.style.color = '#f59e0b';
+    typingSession.timeLeft = typingSession.lesson.time - elapsed;
+    const d = document.getElementById('tsw-time-val');
+    if (d) {
+      d.textContent = _fmtTime(Math.max(0, typingSession.timeLeft));
+      d.style.color = typingSession.timeLeft <= 10 ? '#f43f5e' : typingSession.timeLeft <= 30 ? '#f59e0b' : '';
     }
-    if (typingSession.timeLeft <= 0) finishTypingSession(false);
+    if (typingSession.timeLeft <= 0) _finish(false);
   }, 500);
 }
 
-function updateTypingStats() {
-  if (!typingSession || !typingSession.startTime) return;
-  const elapsed = (Date.now() - typingSession.startTime) / 1000 / 60; // minutes
-  const words    = typingSession.totalTyped / 5;
-  const wpm      = elapsed > 0 ? Math.round(words / elapsed) : 0;
-  const correct  = typingSession.totalTyped - typingSession.errors;
-  const acc      = typingSession.totalTyped > 0 ? Math.round(correct / typingSession.totalTyped * 100) : 100;
+function _updateStats() {
+  if (!typingSession?.startTime) return;
+  const mins  = (Date.now() - typingSession.startTime) / 60000;
+  const wpm   = mins > 0 ? Math.round((typingSession.totalTyped / 5) / mins) : 0;
+  const correct = typingSession.totalTyped - typingSession.errors;
+  const acc   = typingSession.totalTyped > 0 ? Math.round(correct / typingSession.totalTyped * 100) : 100;
 
-  const wpmEl   = document.getElementById('tstat-wpm');
-  const accEl   = document.getElementById('tstat-acc');
-  const charEl  = document.getElementById('tstat-chars');
-  const errEl   = document.getElementById('tstat-errors');
-  if (wpmEl)  wpmEl.textContent  = wpm;
-  if (accEl)  { accEl.textContent = acc; accEl.style.color = acc >= 90 ? '#22c55e' : acc >= 75 ? '#f59e0b' : '#f43f5e'; }
-  if (charEl) charEl.textContent = typingSession.totalTyped;
-  if (errEl)  { errEl.textContent = typingSession.errors; errEl.style.color = typingSession.errors > 0 ? '#f43f5e' : '#22c55e'; }
+  const wEl = document.getElementById('ts-wpm');
+  const aEl = document.getElementById('ts-acc');
+  const cEl = document.getElementById('ts-chars');
+  const eEl = document.getElementById('ts-errors');
+  if (wEl) wEl.textContent = wpm;
+  if (aEl) { aEl.textContent = acc; aEl.style.color = acc >= 90 ? '#22c55e' : acc >= 75 ? '#f59e0b' : '#f43f5e'; }
+  if (cEl) cEl.textContent = typingSession.totalTyped;
+  if (eEl) { eEl.textContent = typingSession.errors; eEl.style.color = typingSession.errors > 0 ? '#f43f5e' : '#22c55e'; }
 }
 
-// ─────────────────────────────────────────────
-//  FINISH SESSION
-// ─────────────────────────────────────────────
-function finishTypingSession(completed) {
+function _finish(completed) {
   if (!typingSession || typingSession.finished) return;
   typingSession.finished = true;
-
   if (typingSession.timerInterval) clearInterval(typingSession.timerInterval);
 
-  const elapsed = typingSession.startTime ? (Date.now() - typingSession.startTime) / 1000 / 60 : 1;
-  const typed   = typingSession.totalTyped || 1;
-  const words   = typed / 5;
-  const wpm     = Math.round(words / Math.max(elapsed, 0.01));
+  const inp = document.getElementById('tsw-input');
+  if (inp) { inp.disabled = true; }
+
+  const mins    = typingSession.startTime ? (Date.now() - typingSession.startTime) / 60000 : 1;
+  const typed   = Math.max(typingSession.totalTyped, 1);
+  const wpm     = Math.round((typed / 5) / Math.max(mins, 0.01));
   const correct = typed - typingSession.errors;
   const acc     = Math.round(correct / typed * 100);
+  const secs    = typingSession.startTime ? Math.round((Date.now() - typingSession.startTime) / 1000) : 0;
 
-  // Save progress
-  loadTypingProgress();
-  const existing = typingProgress[typingSession.id] || {};
+  _tpLoad();
+  const ex = typingProgress[typingSession.id] || {};
   typingProgress[typingSession.id] = {
-    completed: completed || existing.completed,
-    bestWpm: Math.max(wpm, existing.bestWpm || 0),
-    bestAcc: Math.max(acc, existing.bestAcc || 0),
-    attempts: (existing.attempts || 0) + 1,
-    lastDate: new Date().toDateString(),
+    completed: completed || !!ex.completed,
+    bestWpm:   Math.max(wpm, ex.bestWpm || 0),
+    bestAcc:   Math.max(acc, ex.bestAcc || 0),
+    attempts:  (ex.attempts || 0) + 1,
+    lastDate:  new Date().toDateString(),
   };
-  saveTypingProgress();
+  _tpSave();
+  _updateSidebarBadges();
 
-  // Disable input
-  const inp = document.getElementById('tsw-input');
-  if (inp) { inp.disabled = true; inp.style.opacity = '0.5'; }
+  const isTest = typingSession.lesson.type === 'test';
+  const emoji  = completed ? (acc >= 90 ? '🏆' : acc >= 75 ? '🎉' : '👍') : '⏱️';
+  const msg    = completed ? (acc >= 90 ? 'Excellent work!' : acc >= 75 ? 'Good job!' : 'Keep practising!') : "Time's up!";
 
-  // Show result
-  const isTest = typingSession.section.type === 'test';
-  const timeRan = typingSession.startTime ? Math.round((Date.now() - typingSession.startTime) / 1000) : 0;
-  const pass    = isTest ? (wpm >= 10 && acc >= 70) : true;
-
-  const resultEl = document.getElementById('tsw-result');
-  if (resultEl) {
-    resultEl.style.display = '';
-    resultEl.innerHTML = `
-      <div class="tsw-result-card ${pass ? 'pass' : 'retry'}">
-        <div class="trc-emoji">${completed ? (acc >= 90 ? '🏆' : acc >= 75 ? '🎉' : '👍') : '⏱️'}</div>
-        <div class="trc-title">${completed ? (acc >= 90 ? 'Excellent!' : acc >= 75 ? 'Good job!' : 'Keep practising!') : 'Time\'s up!'}</div>
-        <div class="trc-stats-grid">
-          <div class="trc-stat"><span>${wpm}</span><small>WPM</small></div>
-          <div class="trc-stat"><span>${acc}%</span><small>Accuracy</small></div>
-          <div class="trc-stat"><span>${typed}</span><small>Characters</small></div>
-          <div class="trc-stat"><span>${timeRan}s</span><small>Time</small></div>
-        </div>
-        ${isTest ? `<div class="trc-grade">${acc >= 95 ? '⭐⭐⭐ Star Performance!' : acc >= 80 ? '⭐⭐ Great Work!' : acc >= 70 ? '⭐ Pass' : '📖 Need more practice'}</div>` : ''}
-        <div class="trc-actions">
-          <button class="trc-btn retry" onclick="startTypingLesson('${typingSession.lv}','${typingSession.id}')">🔄 Try Again</button>
-          <button class="trc-btn next" onclick="typingTab('${typingSession.lv}')">📋 Back to Lessons</button>
-        </div>
-        ${!typingProgress[typingSession.id]?.completed ? `
-        <button class="trc-mark-done" onclick="markTypingDoneFromResult('${typingSession.id}','${typingSession.lv}')">
-          ✅ Mark as Completed
-        </button>` : `<div class="trc-completed-badge">✅ Marked as Completed</div>`}
-      </div>`;
-    resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const rEl = document.getElementById('tsw-result');
+  if (rEl) {
+    rEl.style.display = 'block';
+    rEl.className = 'tsw-result ' + (acc >= 70 ? 'pass' : 'retry');
+    rEl.innerHTML = `
+      <div class="trc-emoji">${emoji}</div>
+      <div class="trc-title">${msg}</div>
+      <div class="trc-grid">
+        <div class="trc-cell"><span>${wpm}</span><small>WPM</small></div>
+        <div class="trc-cell"><span>${acc}%</span><small>Accuracy</small></div>
+        <div class="trc-cell"><span>${typed}</span><small>Chars</small></div>
+        <div class="trc-cell"><span>${secs}s</span><small>Time</small></div>
+      </div>
+      ${isTest ? `<div class="trc-grade">${acc>=95?'⭐⭐⭐ Star performance!':acc>=80?'⭐⭐ Great work!':acc>=70?'⭐ Pass':'📖 Keep practising'}</div>` : ''}
+      <div class="trc-actions">
+        <button class="trc-btn trc-btn-retry" onclick="startLesson('${typingSession.lv}','${typingSession.id}')">🔄 Try Again</button>
+        <button class="trc-btn trc-btn-back"  onclick="typingTab('${typingSession.lv}')">📋 Back to Lessons</button>
+      </div>
+      ${!typingProgress[typingSession.id]?.completed
+        ? `<button class="trc-markdone" onclick="_markDone('${typingSession.id}','${typingSession.lv}',this)">✅ Mark as Completed</button>`
+        : `<div class="trc-done-badge">✅ Marked as Completed</div>`
+      }`;
+    rEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
   }
 }
 
-function markTypingDoneFromResult(id, lv) {
-  loadTypingProgress();
+function _markDone(id, lv, btn) {
+  _tpLoad();
   if (!typingProgress[id]) typingProgress[id] = {};
   typingProgress[id].completed = true;
-  saveTypingProgress();
-  // Update button
-  const btn = document.querySelector('.trc-mark-done');
-  if (btn) btn.outerHTML = '<div class="trc-completed-badge">✅ Marked as Completed</div>';
+  _tpSave();
+  _updateSidebarBadges();
+  btn.outerHTML = '<div class="trc-done-badge">✅ Marked as Completed</div>';
 }
 
-function typingSessionBack() {
+function _backFromSession() {
+  _killSession();
+  typingTab(_currentTypingTab === 'session' ? 'overview' : _currentTypingTab);
+}
+
+function _killSession() {
   if (typingSession?.timerInterval) clearInterval(typingSession.timerInterval);
   typingSession = null;
-  typingTab(document.querySelector('.typing-nav-btn.active')?.dataset?.tab || 'overview');
 }
 
 // ─────────────────────────────────────────────
-//  TEXT DISPLAY BUILDER
+//  TEXT DISPLAY
 // ─────────────────────────────────────────────
-function buildTextDisplay(target, typedLen, typed = '') {
-  let html = '';
+function _buildDisplay(target, len, typed) {
+  let h = '';
   for (let i = 0; i < target.length; i++) {
-    const ch = target[i] === ' ' ? '&nbsp;' : target[i];
-    if (i < typedLen) {
-      const correct = typed[i] === target[i];
-      html += `<span class="tc-${correct ? 'ok' : 'err'}">${ch}</span>`;
-    } else if (i === typedLen) {
-      html += `<span class="tc-cursor">${ch}</span>`;
+    const ch = target[i] === ' ' ? '&nbsp;' : _esc(target[i]);
+    if (i < len) {
+      h += `<span class="${typed[i]===target[i]?'tc-ok':'tc-err'}">${ch}</span>`;
+    } else if (i === len) {
+      h += `<span class="tc-cur">${ch}</span>`;
     } else {
-      html += `<span class="tc-pending">${ch}</span>`;
+      h += `<span class="tc-todo">${ch}</span>`;
     }
   }
-  return html;
+  return h;
 }
+function _esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ─────────────────────────────────────────────
 //  VIRTUAL KEYBOARD
 // ─────────────────────────────────────────────
-const KB_ROWS = [
+const KB = [
   ['`','1','2','3','4','5','6','7','8','9','0','-','=','⌫'],
   ['Tab','q','w','e','r','t','y','u','i','o','p','[',']','\\'],
   ['Caps','a','s','d','f','g','h','j','k','l',';',"'",'Enter'],
   ['Shift','z','x','c','v','b','n','m',',','.','/','Shift'],
   ['Space'],
 ];
+const HOME_KEYS = new Set(['a','s','d','f','j','k','l',';']);
 
-const FINGER_COLORS = {
-  // Left hand
-  'a':'#f43f5e','q':'#f43f5e','z':'#f43f5e','1':'#f43f5e',
-  's':'#f97316','w':'#f97316','x':'#f97316','2':'#f97316',
-  'd':'#f59e0b','e':'#f59e0b','c':'#f59e0b','3':'#f59e0b',
-  'f':'#22c55e','r':'#22c55e','v':'#22c55e','4':'#22c55e','t':'#22c55e','g':'#22c55e','b':'#22c55e','5':'#22c55e',
-  // Right hand
-  'j':'#3b82f6','u':'#3b82f6','m':'#3b82f6','7':'#3b82f6','y':'#3b82f6','h':'#3b82f6','n':'#3b82f6','6':'#3b82f6',
-  'k':'#8b5cf6','i':'#8b5cf6',',':'#8b5cf6','8':'#8b5cf6',
-  'l':'#ec4899','o':'#ec4899','.':'#ec4899','9':'#ec4899',
-  ';':'#06b6d4','p':'#06b6d4','/':'#06b6d4','0':'#06b6d4',
-};
-
-function renderVirtualKeyboard() {
-  return `<div class="vkb-wrap">
-    ${KB_ROWS.map(row => `
+function _buildVKB() {
+  return KB.map(row => `
     <div class="vkb-row">
-      ${row.map(key => {
-        const lower = key.toLowerCase();
-        const color = FINGER_COLORS[lower] || '#e2e8f0';
-        const isHome = 'asdf jkl;'.includes(lower) && lower.length === 1;
-        const isSpecial = key.length > 1;
-        return `<div class="vkb-key ${isSpecial ? 'special' : ''} ${isHome ? 'home' : ''}"
-          id="vk-${key.replace(/[^a-zA-Z0-9]/g,'_')}"
-          data-key="${key}"
-          style="--kc:${color}">
-          ${key === '⌫' ? '⌫' : key === 'Space' ? '________' : key}
-        </div>`;
+      ${row.map(k => {
+        const lower = k.toLowerCase();
+        const bg = FINGER_COLORS[lower] || '';
+        const isSpec = k.length > 1;
+        const isHome = HOME_KEYS.has(lower);
+        const id = 'vk-' + k.replace(/[^a-zA-Z0-9]/g,'_');
+        return `<div class="vkb-key${isSpec?' special':''}${isHome?' home-key':''}"
+          id="${id}" data-key="${k}"
+          style="${bg?'--kc:'+bg+';background:'+bg:''}">${k==='Space'?'Space Bar':k}</div>`;
       }).join('')}
-    </div>`).join('')}
-    <div class="vkb-legend">
-      <span style="background:#f43f5e">Left Pinky</span>
-      <span style="background:#f97316">Left Ring</span>
-      <span style="background:#f59e0b">Left Middle</span>
-      <span style="background:#22c55e">Left Index</span>
-      <span style="background:#3b82f6">Right Index</span>
-      <span style="background:#8b5cf6">Right Middle</span>
-      <span style="background:#ec4899">Right Ring</span>
-      <span style="background:#06b6d4">Right Pinky</span>
-    </div>
+    </div>`).join('') +
+  `<div class="vkb-legend">
+    <span style="background:#f43f5e">Left Pinky</span>
+    <span style="background:#f97316">Left Ring</span>
+    <span style="background:#f59e0b">Left Middle</span>
+    <span style="background:#22c55e">Left Index</span>
+    <span style="background:#3b82f6">Right Index</span>
+    <span style="background:#8b5cf6">Right Middle</span>
+    <span style="background:#ec4899">Right Ring</span>
+    <span style="background:#06b6d4">Right Pinky</span>
   </div>`;
 }
 
-function highlightKey(char) {
-  // Remove previous highlight
-  document.querySelectorAll('.vkb-key.active-key').forEach(k => k.classList.remove('active-key'));
-  if (!char || char === ' ') {
-    const spaceKey = document.getElementById('vk-Space');
-    if (spaceKey) spaceKey.classList.add('active-key');
+function _highlightKey(char) {
+  document.querySelectorAll('#tsw-vkb .vkb-key.vk-active')
+    .forEach(k => k.classList.remove('vk-active'));
+  if (!char) return;
+  if (char === ' ') {
+    const sp = document.querySelector('#tsw-vkb [data-key="Space"]');
+    if (sp) sp.classList.add('vk-active');
     return;
   }
   const lower = char.toLowerCase();
-  // Find the key element
-  const allKeys = document.querySelectorAll('.vkb-key');
-  allKeys.forEach(k => {
-    if (k.dataset.key && k.dataset.key.toLowerCase() === lower) k.classList.add('active-key');
+  document.querySelectorAll('#tsw-vkb .vkb-key').forEach(k => {
+    if (k.dataset.key && k.dataset.key.toLowerCase() === lower)
+      k.classList.add('vk-active');
   });
-}
-
-// ─────────────────────────────────────────────
-//  KEYBOARD DIAGRAM (overview)
-// ─────────────────────────────────────────────
-function renderKeyboardDiagram() {
-  const rows = [
-    [{k:'A',f:'Left Pinky',c:'#f43f5e'},{k:'S',f:'Left Ring',c:'#f97316'},{k:'D',f:'Left Middle',c:'#f59e0b'},{k:'F',f:'Left Index',c:'#22c55e'},{k:'G',f:'Left Index',c:'#22c55e'},{k:'H',f:'Right Index',c:'#3b82f6'},{k:'J',f:'Right Index',c:'#3b82f6'},{k:'K',f:'Right Middle',c:'#8b5cf6'},{k:'L',f:'Right Ring',c:'#ec4899'},{k:';',f:'Right Pinky',c:'#06b6d4'}],
-  ];
-  return `<div class="tkp-diagram">
-    <div class="tkp-row">
-      ${rows[0].map(k => `<div class="tkp-key" style="background:${k.c}" title="${k.f}">${k.k}</div>`).join('')}
-    </div>
-    <div class="tkp-hint">👆 These are the <strong>home row</strong> keys — always rest your fingers here!</div>
-    <div class="tkp-fingers">
-      <div>🤚 Left hand: <strong style="color:#f43f5e">A</strong> <strong style="color:#f97316">S</strong> <strong style="color:#f59e0b">D</strong> <strong style="color:#22c55e">F</strong></div>
-      <div>✋ Right hand: <strong style="color:#3b82f6">J</strong> <strong style="color:#8b5cf6">K</strong> <strong style="color:#ec4899">L</strong> <strong style="color:#06b6d4">;</strong></div>
-    </div>
-  </div>`;
 }
 
 // ─────────────────────────────────────────────
 //  PROGRESS PAGE
 // ─────────────────────────────────────────────
-function renderTypingProgressPage() {
+function _renderProgress() {
   const el = document.getElementById('typing-progress');
   if (!el) return;
 
-  const allSections = [
-    ...TYPING_CURRICULUM.beginner.sections.map(s => ({ ...s, lv: 'beginner' })),
-    ...TYPING_CURRICULUM.medium.sections.map(s => ({ ...s, lv: 'medium' })),
-    ...TYPING_CURRICULUM.advanced.sections.map(s => ({ ...s, lv: 'advanced' })),
-  ];
-
-  const done       = allSections.filter(s => typingProgress[s.id]?.completed);
-  const tests      = allSections.filter(s => s.type === 'test' && typingProgress[s.id]?.attempts > 0);
-  const allWpms    = Object.values(typingProgress).map(p => p.bestWpm).filter(Boolean);
-  const bestWpm    = allWpms.length ? Math.max(...allWpms) : 0;
-  const avgWpm     = allWpms.length ? Math.round(allWpms.reduce((a,b) => a+b, 0) / allWpms.length) : 0;
+  const all = ['beginner','medium','advanced'].flatMap(lv =>
+    TC[lv].lessons.map(l => ({...l, lv}))
+  );
+  const done  = all.filter(l => typingProgress[l.id]?.completed);
+  const tests = all.filter(l => l.type==='test' && typingProgress[l.id]?.attempts > 0);
+  const wpms  = Object.values(typingProgress).map(p=>p.bestWpm).filter(Boolean);
+  const best  = wpms.length ? Math.max(...wpms) : 0;
+  const avg   = wpms.length ? Math.round(wpms.reduce((a,b)=>a+b,0)/wpms.length) : 0;
 
   el.innerHTML = `
-    <div class="typing-progress-wrap">
-      <h2 class="tpw-title">📊 My Typing Progress</h2>
+  <div class="tpw-wrap">
+    <div class="tpw-title">📊 My Typing Progress</div>
 
-      <!-- Summary cards -->
-      <div class="tpw-summary">
-        <div class="tpw-card blue"><div class="tpw-n">${done.length}</div><div class="tpw-l">Lessons Completed</div></div>
-        <div class="tpw-card green"><div class="tpw-n">${bestWpm || '—'}</div><div class="tpw-l">Best WPM</div></div>
-        <div class="tpw-card amber"><div class="tpw-n">${avgWpm || '—'}</div><div class="tpw-l">Average WPM</div></div>
-        <div class="tpw-card purple"><div class="tpw-n">${tests.length}</div><div class="tpw-l">Tests Taken</div></div>
-      </div>
+    <div class="tpw-cards">
+      <div class="tpw-card blue">  <div class="tpw-n">${done.length}</div><div class="tpw-l">Lessons Done</div></div>
+      <div class="tpw-card green"> <div class="tpw-n">${best||'—'}</div>  <div class="tpw-l">Best WPM</div></div>
+      <div class="tpw-card amber"> <div class="tpw-n">${avg||'—'}</div>   <div class="tpw-l">Avg WPM</div></div>
+      <div class="tpw-card purple"><div class="tpw-n">${tests.length}</div><div class="tpw-l">Tests Taken</div></div>
+    </div>
 
-      <!-- Per-level progress bars -->
-      ${['beginner','medium','advanced'].map(lv => {
-        const c = TYPING_CURRICULUM[lv];
-        const lvDone = c.sections.filter(s => typingProgress[s.id]?.completed).length;
-        const pct = Math.round(lvDone / c.sections.length * 100);
-        return `
-        <div class="tpw-level-row">
-          <div class="tpw-lv-label">${c.label}</div>
-          <div class="tpw-lv-bar"><div class="tpw-lv-fill" style="width:${pct}%;background:${c.color}"></div></div>
-          <div class="tpw-lv-pct">${lvDone}/${c.sections.length}</div>
+    ${['beginner','medium','advanced'].map(lv => {
+      const c = TC[lv];
+      const d = c.lessons.filter(l=>typingProgress[l.id]?.completed).length;
+      const pct = Math.round(d/c.lessons.length*100);
+      return `
+      <div class="tpw-lvrow">
+        <div class="tpw-lvlabel">${c.label}</div>
+        <div class="tpw-lvbar"><div class="tpw-lvfill" style="width:${pct}%;background:${c.color}"></div></div>
+        <div class="tpw-lvpct">${d}/${c.lessons.length}</div>
+      </div>`;
+    }).join('')}
+
+    <div class="tpw-sub">📋 Test Results</div>
+    ${tests.length ? `
+    <div class="tpw-table">
+      <div class="tpw-th"><span>Lesson</span><span>Best WPM</span><span>Best Acc</span><span>Tries</span></div>
+      ${tests.map(l => {
+        const p = typingProgress[l.id];
+        return `<div class="tpw-tr">
+          <span>${l.title}</span>
+          <span><strong>${p.bestWpm}</strong> WPM</span>
+          <span><strong>${p.bestAcc}%</strong></span>
+          <span>${p.attempts}</span>
         </div>`;
       }).join('')}
+    </div>` : '<p style="color:var(--text-m);font-size:14px;padding:8px 0">No tests yet — start practising!</p>'}
 
-      <!-- Test history -->
-      <h3 class="tpw-subtitle">📋 Test Results</h3>
-      ${tests.length ? `
-      <div class="tpw-test-table">
-        <div class="tpw-th"><span>Lesson</span><span>Best WPM</span><span>Best Acc</span><span>Attempts</span></div>
-        ${tests.map(s => {
-          const p = typingProgress[s.id];
-          return `<div class="tpw-tr">
-            <span>${s.title}</span>
-            <span><strong>${p.bestWpm}</strong> WPM</span>
-            <span><strong>${p.bestAcc}%</strong></span>
-            <span>${p.attempts}</span>
-          </div>`;
-        }).join('')}
-      </div>` : '<p style="color:var(--text-m);font-size:14px;padding:12px 0">No tests taken yet — start practising!</p>'}
-
-      <!-- Reset button -->
-      <button class="tpw-reset-btn" onclick="resetTypingProgress()">🗑️ Reset All Progress</button>
-    </div>`;
-}
-
-// ─────────────────────────────────────────────
-//  STORAGE
-// ─────────────────────────────────────────────
-function loadTypingProgress() {
-  try { typingProgress = JSON.parse(localStorage.getItem(TYPING_STORAGE_KEY) || '{}'); }
-  catch { typingProgress = {}; }
-}
-function saveTypingProgress() {
-  try { localStorage.setItem(TYPING_STORAGE_KEY, JSON.stringify(typingProgress)); } catch {}
-}
-function resetTypingProgress() {
-  if (!confirm('Reset all typing progress? This cannot be undone.')) return;
-  typingProgress = {};
-  saveTypingProgress();
-  renderTypingProgressPage();
+    <button class="tpw-reset" onclick="_resetTyping()">🗑️ Reset All Progress</button>
+  </div>`;
 }
 
 // ─────────────────────────────────────────────
 //  HELPERS
 // ─────────────────────────────────────────────
-function formatTime(secs) {
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return m > 0 ? `${m}:${String(s).padStart(2,'0')}` : `${s}s`;
+function _fmtTime(s) {
+  const m = Math.floor(s/60), sec = s%60;
+  return m > 0 ? `${m}:${String(sec).padStart(2,'0')}` : `${sec}s`;
+}
+function _tpLoad() {
+  try { typingProgress = JSON.parse(localStorage.getItem(TYPING_KEY)||'{}'); } catch { typingProgress={}; }
+}
+function _tpSave() {
+  try { localStorage.setItem(TYPING_KEY, JSON.stringify(typingProgress)); } catch {}
+}
+function _resetTyping() {
+  if (!confirm('Reset all typing progress? This cannot be undone.')) return;
+  typingProgress = {}; _tpSave(); _renderProgress(); _updateSidebarBadges();
+}
+function _updateSidebarBadges() {
+  _tpLoad();
+  ['beginner','medium','advanced'].forEach(lv => {
+    const el = document.getElementById('tnb-' + lv);
+    if (!el) return;
+    const ls = TC[lv].lessons;
+    const d  = ls.filter(l => typingProgress[l.id]?.completed).length;
+    el.textContent = d + '/' + ls.length;
+  });
 }
 
-// ── Register with LearnBuddy router ──────────
 if (typeof VALID_SUBJECTS !== 'undefined') VALID_SUBJECTS.push('typing');
