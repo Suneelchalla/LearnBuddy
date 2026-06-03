@@ -42,10 +42,21 @@ function loadHomeStats() {
   getCacheSize().then(n => {
     document.getElementById('stat-cached').textContent = n.toLocaleString();
   });
-  // Greeting
-  const h = new Date().getHours();
-  const g = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-  document.getElementById('home-greeting').textContent = g + '! 👋';
+  // Greeting — personalised if user profile exists
+  const h    = new Date().getHours();
+  const tod  = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const emoji= h < 12 ? '🌅' : h < 17 ? '☀️' : '🌙';
+  try {
+    const profile = JSON.parse(localStorage.getItem('lb_profile') || 'null');
+    const greetEl = document.getElementById('home-greeting');
+    if (profile && profile.name) {
+      greetEl.textContent = tod + ', ' + profile.name + '! ' + emoji;
+    } else {
+      greetEl.textContent = tod + '! 👋';
+    }
+  } catch {
+    document.getElementById('home-greeting').textContent = tod + '! 👋';
+  }
   // Word of the Day
   initWOTD();
 }
@@ -1898,3 +1909,139 @@ document.addEventListener('click', function(e) {
     if (pill)  pill.classList.remove('open');
   }
 }, true); // capture phase — fires even if child called stopPropagation
+
+// ══════════════════════════════════════════════
+//  ONBOARDING — First-visit name & class setup
+// ══════════════════════════════════════════════
+
+const OB_WELCOME_MSGS = [
+  'Your learning adventure is about to begin! 🗺️',
+  'Ready to explore, discover, and grow? Let\'s do this! 💪',
+  'The world of knowledge is waiting just for you! 🌍',
+  'Every great explorer started with a single step. This is yours! 🚀',
+  'Time to learn something amazing today! ⭐',
+];
+
+const OB_CLASS_LABELS = [
+  '1st','2nd','3rd','4th','5th',
+  '6th','7th','8th','9th','10th'
+];
+
+let _obSelectedClass = '';
+
+function initOnboarding() {
+  // Check if profile already saved
+  try {
+    const profile = JSON.parse(localStorage.getItem('lb_profile') || 'null');
+    if (profile && profile.name && profile.cls) return; // already done
+  } catch {}
+
+  // Build class buttons
+  const grid = document.getElementById('ob-class-grid');
+  if (grid) {
+    grid.innerHTML = OB_CLASS_LABELS.map((label, i) =>
+      `<button class="ob-class-btn" data-cls="${label}" onclick="obSelectClass(this,'${label}')">${label}</button>`
+    ).join('');
+  }
+
+  // Live-validate name input
+  const nameInp = document.getElementById('ob-name-inp');
+  if (nameInp) {
+    nameInp.addEventListener('input', obValidate);
+    nameInp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); obSubmit(); } });
+  }
+
+  // Show the overlay with a tiny delay so page renders first
+  setTimeout(() => {
+    const ov = document.getElementById('onboarding-overlay');
+    if (ov) ov.style.display = 'flex';
+    if (nameInp) nameInp.focus();
+  }, 350);
+}
+
+function obSelectClass(btn, cls) {
+  _obSelectedClass = cls;
+  document.querySelectorAll('.ob-class-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  obValidate();
+}
+
+function obValidate() {
+  const name = (document.getElementById('ob-name-inp')?.value || '').trim();
+  const btn  = document.getElementById('ob-submit-btn');
+  if (btn) btn.disabled = !(name.length >= 1 && _obSelectedClass);
+}
+
+function obSubmit() {
+  const name = (document.getElementById('ob-name-inp')?.value || '').trim();
+  if (!name || !_obSelectedClass) return;
+
+  // Save profile
+  const profile = { name, cls: _obSelectedClass, joined: new Date().toISOString() };
+  try { localStorage.setItem('lb_profile', JSON.stringify(profile)); } catch {}
+
+  // Transition to welcome step
+  document.getElementById('ob-step-form').style.display    = 'none';
+  document.getElementById('ob-step-welcome').style.display = '';
+
+  // Populate welcome text
+  const h    = new Date().getHours();
+  const tod  = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  const emoji= h < 12 ? '🌅' : h < 17 ? '☀️' : '🌙';
+  const suffixes = ['st','nd','rd'];
+  const num = parseInt(_obSelectedClass);
+  const suffix = num <= 3 ? suffixes[num-1] : 'th';
+
+  document.getElementById('ob-welcome-emoji').textContent = emoji;
+  document.getElementById('ob-welcome-name').textContent  = tod + ', ' + name + '! 🎉';
+  document.getElementById('ob-welcome-class').textContent = '📚 Class ' + _obSelectedClass + ' Explorer';
+  document.getElementById('ob-welcome-msg').textContent   =
+    OB_WELCOME_MSGS[Math.floor(Math.random() * OB_WELCOME_MSGS.length)];
+
+  // Sparkle burst
+  _obSparkles();
+
+  // Update live greeting on home screen too
+  loadHomeStats();
+}
+
+function obStart() {
+  const ov = document.getElementById('onboarding-overlay');
+  if (ov) {
+    ov.style.transition = 'opacity .35s';
+    ov.style.opacity = '0';
+    setTimeout(() => { ov.style.display = 'none'; ov.style.opacity = ''; }, 370);
+  }
+}
+
+function _obSparkles() {
+  const container = document.getElementById('ob-sparkles');
+  if (!container) return;
+  const colors = ['#f59e0b','#6366f1','#10b981','#f43f5e','#3b82f6','#8b5cf6','#fbbf24','#ec4899'];
+  for (let i = 0; i < 40; i++) {
+    const sp = document.createElement('div');
+    sp.className = 'ob-sparkle';
+    const size  = 5 + Math.random() * 10;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const startX = 20 + Math.random() * 60; // % across card
+    const startY = 40 + Math.random() * 30;
+    const dx = (Math.random() - 0.5) * 260;
+    const dy = (Math.random() - 0.5) * 220 - 60;
+    const delay = Math.random() * 0.4;
+    sp.style.cssText = [
+      `left:${startX}%`, `top:${startY}%`,
+      `width:${size}px`, `height:${size}px`,
+      `background:${color}`,
+      `--dx:${dx}px`, `--dy:${dy}px`,
+      `animation-delay:${delay}s`,
+      `animation-duration:${0.8 + Math.random() * 0.5}s`,
+    ].join(';');
+    container.appendChild(sp);
+    setTimeout(() => sp.remove(), 1400 + delay * 1000);
+  }
+}
+
+// ── Init on page load ──
+document.addEventListener('DOMContentLoaded', () => {
+  initOnboarding();
+});
